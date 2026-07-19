@@ -30,7 +30,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
 			@NonNull FilterChain filterChain) throws ServletException, IOException {
 
-		System.out.println("JWT Filter Executed");
 		final String authHeader = request.getHeader("Authorization");
 		// No JWT found
 		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -44,7 +43,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 		try {
 			username = jwtService.extractUsername(jwt);
-			System.out.println("Username from JWT: " + username);
 		} catch (Exception ex) {
 			filterChain.doFilter(request, response);
 			return;
