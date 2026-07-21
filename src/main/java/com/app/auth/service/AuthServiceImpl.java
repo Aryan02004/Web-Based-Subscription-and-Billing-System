@@ -81,9 +81,15 @@ public class AuthServiceImpl implements AuthService {
 		User user = userRepository.findByEmail(request.getEmail())
 				.orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-		if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-			throw new RuntimeException("Invalid email or password");
-		}
+		  // Check if email is verified
+	    if (!user.isEmailVerified()) {
+	        throw new RuntimeException("Please verify your email before logging in.");
+	    }
+
+	    // Check password
+	    if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+	        throw new RuntimeException("Invalid email or password");
+	    }
 
 		UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
 
