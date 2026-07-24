@@ -1,11 +1,11 @@
 package com.app.otp.controller;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.app.otp.dto.GenerateOtpRequest;
 import com.app.otp.dto.OtpResponse;
@@ -14,7 +14,7 @@ import com.app.otp.service.OtpService;
 
 import jakarta.validation.Valid;
 
-@Controller
+@RestController
 @RequestMapping("/api/otp")
 public class OtpController {
 
