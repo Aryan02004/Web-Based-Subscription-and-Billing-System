@@ -10,6 +10,11 @@ import com.app.common.entity.BaseEntity;
 import com.app.common.enums.BillingCycle;
 import com.app.organization.entity.Organization;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -126,5 +131,7 @@ public class SubscriptionPlan extends BaseEntity {
 	public void setOrganization(Organization organization) {
 		this.organization = organization;
 	}
-
+	
+    
+    
 }

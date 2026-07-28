@@ -33,15 +33,19 @@ public class SecurityConfig {
 
 		http.csrf(csrf -> csrf.disable())
 
+				.cors(cors -> {
+				})
+
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 				.exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
 
 				.authorizeHttpRequests(auth -> auth
 
-						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/otp/**").permitAll()
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/otp/**", "/public/**")
+						.permitAll()
 
-						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/test-payment.html").permitAll()
 
 						.requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
 

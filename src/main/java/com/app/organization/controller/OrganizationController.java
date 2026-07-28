@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.app.organization.dto.MyOrganizationResponse;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import com.app.organization.dto.OrganizationRequest;
 import com.app.organization.dto.OrganizationResponse;
 import com.app.organization.service.OrganizationService;
@@ -69,5 +74,10 @@ public class OrganizationController {
 	public List<MyOrganizationResponse> getMyOrganizations() {
 
 		return organizationService.getMyOrganizations();
+	}
+	@PostMapping("/generate-link")
+	public ResponseEntity<String> generatePublicLink() {
+
+		return ResponseEntity.ok(organizationService.generatePublicLink());
 	}
 }

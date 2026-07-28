@@ -5,10 +5,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.app.common.entity.BaseEntity;
+import com.app.invoice.enums.InvoiceStatus;
 import com.app.subscription.entity.SubscriptionEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -52,8 +55,9 @@ public class InvoiceEntity extends BaseEntity {
     @Column(name = "pdf_url", length = 500)
     private String pdfUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
-    private String status;
+    private InvoiceStatus status;
 
     @Column(name = "generated_at")
     private LocalDateTime generatedAt;

@@ -34,4 +34,5 @@ public interface OrganizationService {
 	void validateOrganizationAccess(Long organizationId, Long userId);
 
 	List<MyOrganizationResponse> getMyOrganizations();
+	String generatePublicLink();
 }

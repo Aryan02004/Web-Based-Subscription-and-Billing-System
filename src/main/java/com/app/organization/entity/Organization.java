@@ -57,4 +57,9 @@ public class Organization extends BaseEntity {
 
 	@Column(name = "last_status_changed_at")
 	private LocalDateTime lastStatusChangedAt;
+	@Column(name = "public_link_token", unique = true)
+	private String publicLinkToken;
+
+	@Column(name = "link_active")
+	private Boolean linkActive = true;
 }

@@ -25,7 +25,7 @@ public class SubscriptionEntity extends BaseEntity {
 
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
-
+    
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
 

@@ -27,10 +27,20 @@ import com.app.auth.validator.PasswordValidator;
 import com.app.common.enums.RoleType;
 import com.app.exception.InvalidTokenException;
 import com.app.exception.ResourceNotFoundException;
+import com.app.organization.repository.OrganizationRepository;
+import com.app.organization.repository.OrganizationUserRepository;
 import com.app.security.service.CustomUserDetailsService;
 import com.app.security.service.JwtService;
-
+import com.app.auth.entity.Role;
+import com.app.auth.repository.RoleRepository;
+import com.app.common.enums.RoleType;
+import com.app.organization.entity.Organization;
+import com.app.organization.entity.OrganizationUser;
+import com.app.organization.repository.OrganizationRepository;
+import com.app.organization.repository.OrganizationUserRepository;
 import lombok.RequiredArgsConstructor;
+import com.app.otp.service.OtpService;
+import com.app.otp.dto.GenerateOtpRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +55,10 @@ public class AuthServiceImpl implements AuthService {
 	private final JwtService jwtService;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final CustomUserDetailsService userDetailsService;
+	private final RoleRepository roleRepository;
+	private final OrganizationRepository organizationRepository;
+	private final OrganizationUserRepository organizationUserRepository;
+	private final OtpService otpService;
 
 	@Override
 	public RegisterResponse register(RegisterRequest request) {
@@ -72,6 +86,34 @@ public class AuthServiceImpl implements AuthService {
 		// Save user
 		User savedUser = userRepository.save(user);
 
+		// Fetch default admin role
+		Role adminRole = roleRepository.findByName(RoleType.ORGANIZATION_ADMIN)
+				.orElseThrow(() -> new RuntimeException("Default role ORGANIZATION_ADMIN not found"));
+
+		// Create organization
+		Organization organization = new Organization();
+		organization.setName(savedUser.getFirstName() + "'s Organization");
+		organization.setContactEmail(savedUser.getEmail());
+		organization.setStatus("ACTIVE");
+		organization.setCreatedBy(savedUser);
+
+		organization = organizationRepository.save(organization);
+
+		// Create organization-user mapping
+		OrganizationUser organizationUser = new OrganizationUser();
+		organizationUser.setOrganization(organization);
+		organizationUser.setUser(savedUser);
+		organizationUser.setRole(adminRole);
+		organizationUser.setJoinedAt(LocalDateTime.now());
+		organizationUser.setStatus("ACTIVE");
+
+		organizationUserRepository.save(organizationUser);
+
+		GenerateOtpRequest otpRequest = new GenerateOtpRequest();
+		otpRequest.setUserId(savedUser.getId());
+		otpRequest.setPurpose("EMAIL_VERIFICATION");
+
+		otpService.generateOtp(otpRequest);
 		// Return response
 		return userMapper.toRegisterResponse(savedUser);
 	}
