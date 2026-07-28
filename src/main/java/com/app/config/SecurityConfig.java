@@ -2,6 +2,7 @@ package com.app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -40,6 +42,8 @@ public class SecurityConfig {
 						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/otp/**").permitAll()
 
 						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+						.requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
 
 						.anyRequest().authenticated())
 

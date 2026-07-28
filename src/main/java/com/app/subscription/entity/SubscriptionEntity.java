@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.app.common.entity.BaseEntity;
-import com.app.subscriptionplan.Entity.SubscriptionPlan;
+import com.app.subscriptionplan.entity.SubscriptionPlan;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -2,7 +2,7 @@ package com.app.subscriptionplan.service;
 
 import java.util.List;
 
-import com.app.subscriptionplan.Entity.SubscriptionPlan;
+import com.app.subscriptionplan.entity.SubscriptionPlan;
 
 
 public interface SubscriptionPlanService {

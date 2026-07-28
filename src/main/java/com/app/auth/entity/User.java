@@ -39,8 +39,11 @@ public class User extends BaseEntity {
 	@Column(name = "last_login_at")
 	private LocalDateTime lastLoginAt;
 
-//	@ManyToMany(fetch = FetchType.EAGER)
-//	@JoinTable(name = "organization_users", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-//	private Set<Role> roles = new HashSet<>();
+	@ManyToOne()
+	@JoinColumn(name = "role_id", nullable = false)
+	private Role role;
+
+	@Column(name = "token_invalid_before")
+	private LocalDateTime tokenInvalidBefore;
 
 }

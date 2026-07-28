@@ -1,13 +1,9 @@
 package com.app.common.enums;
 
 public enum RoleType {
-	PLATFORM_OWNER,
+	SUPER_ADMIN,
 
 	ORGANIZATION_ADMIN,
-
-	ORGANIZATION_MANAGER,
-
-	ORGANIZATION_STAFF,
 
 	CUSTOMER
 }

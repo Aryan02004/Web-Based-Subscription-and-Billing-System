@@ -3,23 +3,22 @@ package com.app.organization.dto;
 import com.app.common.enums.OrganizationStatus;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
-public class OrganizationResponse {
+public class MyOrganizationResponse {
 
-	private Long id;
+	private Long organizationId;
 
-	private String name;
+	private String organizationName;
+
+	private OrganizationStatus status;
 
 	private String industry;
 
 	private String contactEmail;
 
-	private OrganizationStatus status;
+	private String role;
 
-//	private Long createdBy;
 }

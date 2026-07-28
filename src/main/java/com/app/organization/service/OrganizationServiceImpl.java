@@ -4,15 +4,27 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.app.auth.entity.RefreshToken;
 import com.app.auth.entity.Role;
 import com.app.auth.entity.User;
+import com.app.auth.repository.RefreshTokenRepository;
 import com.app.auth.repository.RoleRepository;
 import com.app.auth.repository.UserRepository;
+import com.app.common.enums.OrganizationStatus;
+import com.app.common.enums.OrganizationUserStatus;
+import com.app.common.enums.RoleType;
+import com.app.exception.OrganizationAccessDeniedException;
 import com.app.organization.dto.AddMemberRequest;
+import com.app.organization.dto.MyOrganizationResponse;
 import com.app.organization.dto.OrganizationRequest;
 import com.app.organization.dto.OrganizationResponse;
+import com.app.organization.dto.RejectOrganizationRequest;
+import com.app.organization.dto.SuspendOrganizationRequest;
 import com.app.organization.entity.Organization;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationRepository;
@@ -25,118 +37,280 @@ public class OrganizationServiceImpl implements OrganizationService {
 	private final OrganizationUserRepository organizationUserRepository;
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
-	
-  
-    public OrganizationServiceImpl(OrganizationRepository organizationRepository,
+	private final RefreshTokenRepository refreshTokenRepository;
+
+	public OrganizationServiceImpl(OrganizationRepository organizationRepository,
 			OrganizationUserRepository organizationUserRepository, UserRepository userRepository,
-			RoleRepository roleRepository) {
+			RoleRepository roleRepository, RefreshTokenRepository refreshTokenRepository) {
 		super();
 		this.organizationRepository = organizationRepository;
 		this.organizationUserRepository = organizationUserRepository;
 		this.userRepository = userRepository;
 		this.roleRepository = roleRepository;
+		this.refreshTokenRepository = refreshTokenRepository;
 	}
 
 	@Override
-    public OrganizationResponse createOrganization(OrganizationRequest request) {
+	@Transactional
+	public OrganizationResponse createOrganization(OrganizationRequest request) {
 
-        User user = userRepository.findById(request.getCreatedBy())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        Organization organization = new Organization();
+		String email = authentication.getName();
 
-        organization.setName(request.getName());
-        organization.setIndustry(request.getIndustry());
-        organization.setContactEmail(request.getContactEmail());
-        organization.setStatus("ACTIVE");
-        organization.setCreatedBy(user);
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("Authenticated user not found"));
 
-        Organization savedOrganization = organizationRepository.save(organization);
+		Organization organization = new Organization();
 
-        return mapToResponse(savedOrganization);
-    }
+		organization.setName(request.getName());
+		organization.setIndustry(request.getIndustry());
+		organization.setContactEmail(request.getContactEmail());
+		organization.setStatus(OrganizationStatus.PENDING);
+		organization.setCreatedBy(user);
 
-    @Override
-    public OrganizationResponse getOrganizationById(Long id) {
+		Organization savedOrganization = organizationRepository.save(organization);
 
-        Organization organization = organizationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Organization not found"));
+		Role organizationAdminRole = roleRepository.findByName(RoleType.ORGANIZATION_ADMIN)
+				.orElseThrow(() -> new RuntimeException("Organization Admin role not found"));
 
-        return mapToResponse(organization);
-    }
+		OrganizationUser organizationUser = new OrganizationUser();
+		organizationUser.setOrganization(savedOrganization);
+		organizationUser.setUser(user);
+		organizationUser.setRole(organizationAdminRole);
+		organizationUser.setJoinedAt(LocalDateTime.now());
+		organizationUser.setStatus(OrganizationUserStatus.ACTIVE);
 
-    @Override
-    public List<OrganizationResponse> getAllOrganizations() {
+		organizationUserRepository.save(organizationUser);
 
-        return organizationRepository.findAll()
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+		return mapToResponse(savedOrganization);
 
-    @Override
-    public OrganizationResponse updateOrganization(Long id, OrganizationRequest request) {
+	}
 
-        Organization organization = organizationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Organization not found"));
+	@Override
+	public OrganizationResponse getOrganizationById(Long id) {
 
-        User user = userRepository.findById(request.getCreatedBy())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+		Organization organization = organizationRepository.findByIdAndDeletedFalse(id)
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
-        organization.setName(request.getName());
-        organization.setIndustry(request.getIndustry());
-        organization.setContactEmail(request.getContactEmail());
-        organization.setCreatedBy(user);
+		return mapToResponse(organization);
+	}
 
-        Organization updatedOrganization = organizationRepository.save(organization);
+	@Override
+	public List<OrganizationResponse> getAllOrganizations() {
 
-        return mapToResponse(updatedOrganization);
-    }
+		return organizationRepository.findAll().stream().map(this::mapToResponse).collect(Collectors.toList());
+	}
 
-    @Override
-    public void deleteOrganization(Long id) {
+	@Override
+	public OrganizationResponse updateOrganization(Long id, OrganizationRequest request) {
 
-        organizationRepository.deleteById(id);
+		Organization organization = organizationRepository.findByIdAndDeletedFalse(id)
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
-    }
+		organization.setName(request.getName());
+		organization.setIndustry(request.getIndustry());
+		organization.setContactEmail(request.getContactEmail());
 
-    private OrganizationResponse mapToResponse(Organization organization) {
+		Organization updatedOrganization = organizationRepository.save(organization);
 
-        OrganizationResponse response = new OrganizationResponse();
+		return mapToResponse(updatedOrganization);
+	}
 
-        response.setId(organization.getId());
-        response.setName(organization.getName());
-        response.setIndustry(organization.getIndustry());
-        response.setContactEmail(organization.getContactEmail());
-        response.setStatus(organization.getStatus());
+	@Override
+	public void deleteOrganization(Long id) {
 
-        if (organization.getCreatedBy() != null) {
-            response.setCreatedBy(organization.getCreatedBy().getId());
-        }
+		organizationRepository.deleteById(id);
 
-        return response;
-    }
+	}
 
-    @Override
-    public void addMember(Long organizationId, AddMemberRequest request) {
+	private OrganizationResponse mapToResponse(Organization organization) {
 
-        Organization organization = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new RuntimeException("Organization not found"));
+		OrganizationResponse response = new OrganizationResponse();
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+		response.setId(organization.getId());
+		response.setName(organization.getName());
+		response.setIndustry(organization.getIndustry());
+		response.setContactEmail(organization.getContactEmail());
+		response.setStatus(organization.getStatus());
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+		return response;
+	}
 
-        OrganizationUser organizationUser = new OrganizationUser();
+	@Override
+	public void addMember(Long organizationId, AddMemberRequest request) {
 
-        organizationUser.setOrganization(organization);
-        organizationUser.setUser(user);
-        organizationUser.setRole(role);
-        organizationUser.setJoinedAt(LocalDateTime.now());
-        organizationUser.setStatus("ACTIVE");
+		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
-        organizationUserRepository.save(organizationUser);
-    }
+		User user = userRepository.findById(request.getUserId())
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		Role role = roleRepository.findById(request.getRoleId())
+				.orElseThrow(() -> new RuntimeException("Role not found"));
+
+		OrganizationUser organizationUser = new OrganizationUser();
+
+		organizationUser.setOrganization(organization);
+		organizationUser.setUser(user);
+		organizationUser.setRole(role);
+		organizationUser.setJoinedAt(LocalDateTime.now());
+		organizationUser.setStatus(OrganizationUserStatus.ACTIVE);
+
+		organizationUserRepository.save(organizationUser);
+	}
+
+	@Override
+	public List<OrganizationResponse> getPendingOrganizations() {
+		// TODO Auto-generated method stub
+		return organizationRepository.findByStatus(OrganizationStatus.PENDING).stream().map(this::mapToResponse)
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	@Transactional
+	public OrganizationResponse approveOrganization(Long organizationId) {
+		// TODO Auto-generated method stub
+		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
+
+		if (organization.getStatus() != OrganizationStatus.PENDING) {
+			throw new RuntimeException("Only pending organizations can be approved.");
+		}
+
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		String email = authentication.getName();
+
+		User superAdmin = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("Super Admin not found"));
+
+		organization.setStatus(OrganizationStatus.APPROVED);
+		organization.setApprovedBy(superAdmin);
+		organization.setApprovedAt(LocalDateTime.now());
+		organization.setLastStatusChangedAt(LocalDateTime.now());
+
+		organizationRepository.save(organization);
+
+		User owner = organization.getCreatedBy();
+
+		Role organizationAdminRole = roleRepository.findByName(RoleType.ORGANIZATION_ADMIN)
+				.orElseThrow(() -> new RuntimeException("Role not found"));
+
+		owner.setRole(organizationAdminRole);
+
+		userRepository.save(owner);
+
+		List<RefreshToken> tokens = refreshTokenRepository.findByUser(owner);
+
+		for (RefreshToken token : tokens) {
+			token.setRevoked(true);
+		}
+
+		refreshTokenRepository.saveAll(tokens);
+
+		return mapToResponse(organization);
+	}
+
+	@Override
+	@Transactional
+	public OrganizationResponse rejectOrganization(Long organizationId, RejectOrganizationRequest reason) {
+		// TODO Auto-generated method stub
+		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
+
+		if (organization.getStatus() != OrganizationStatus.PENDING) {
+			throw new RuntimeException("Only pending organizations can be rejected.");
+		}
+
+		organization.setStatus(OrganizationStatus.REJECTED);
+		organization.setRejectedAt(LocalDateTime.now());
+		organization.setRejectionReason(reason.getReason());
+		organization.setLastStatusChangedAt(LocalDateTime.now());
+
+		organizationRepository.save(organization);
+
+		return mapToResponse(organization);
+	}
+
+	@Override
+	@Transactional
+	public OrganizationResponse suspendOrganization(Long organizationId, SuspendOrganizationRequest reason) {
+		// TODO Auto-generated method stub
+		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
+
+		if (organization.getStatus() != OrganizationStatus.APPROVED) {
+			throw new RuntimeException("Only approved organizations can be suspended.");
+		}
+
+		organization.setStatus(OrganizationStatus.SUSPENDED);
+
+		organization.setRejectionReason(reason.getReason());
+
+		organization.setLastStatusChangedAt(LocalDateTime.now());
+
+		organizationRepository.save(organization);
+
+		return mapToResponse(organization);
+	}
+
+	@Override
+	@Transactional
+	public void validateOrganizationAccess(Long organizationId, Long userId) {
+		// TODO Auto-generated method stub
+		OrganizationUser organizationUser = organizationUserRepository
+				.findByOrganizationIdAndUserId(organizationId, userId)
+				.orElseThrow(() -> new OrganizationAccessDeniedException("You are not a member of this organization"));
+
+		Organization organization = organizationUser.getOrganization();
+
+		switch (organization.getStatus()) {
+
+		case APPROVED:
+			return;
+
+		case PENDING:
+			throw new OrganizationAccessDeniedException("Organization approval is pending.");
+
+		case REJECTED:
+			throw new OrganizationAccessDeniedException("Organization has been rejected.");
+
+		case SUSPENDED:
+			throw new OrganizationAccessDeniedException("Organization has been suspended.");
+
+		default:
+			throw new OrganizationAccessDeniedException("Organization cannot access this resource.");
+		}
+
+	}
+
+	@Override
+	public List<MyOrganizationResponse> getMyOrganizations() {
+		// TODO Auto-generated method stub
+
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		String email = authentication.getName();
+
+		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+		List<OrganizationUser> organizationUsers = organizationUserRepository.findByUserId(user.getId());
+
+		return organizationUsers.stream().map(orgUser -> {
+
+			MyOrganizationResponse dto = new MyOrganizationResponse();
+
+			dto.setOrganizationId(orgUser.getOrganization().getId());
+
+			dto.setOrganizationName(orgUser.getOrganization().getName());
+
+			dto.setStatus(orgUser.getOrganization().getStatus());
+
+			dto.setRole(orgUser.getRole().getName().name());
+
+			return dto;
+
+		}).toList();
+	}
 }

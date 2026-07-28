@@ -17,11 +17,14 @@ import com.app.auth.dto.RegisterResponse;
 import com.app.auth.dto.VerifyEmailRequest;
 import com.app.auth.dto.VerifyEmailResponse;
 import com.app.auth.entity.RefreshToken;
+import com.app.auth.entity.Role;
 import com.app.auth.entity.User;
 import com.app.auth.mapper.AuthUserMapper;
 import com.app.auth.repository.RefreshTokenRepository;
+import com.app.auth.repository.RoleRepository;
 import com.app.auth.repository.UserRepository;
 import com.app.auth.validator.PasswordValidator;
+import com.app.common.enums.RoleType;
 import com.app.exception.InvalidTokenException;
 import com.app.exception.ResourceNotFoundException;
 import com.app.security.service.CustomUserDetailsService;
@@ -35,7 +38,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthServiceImpl implements AuthService {
 
 	private final UserRepository userRepository;
-//	private final RoleRepository roleRepository;
+	private final RoleRepository roleRepository;
 	private final AuthUserMapper userMapper;
 	private final PasswordValidator passwordValidator;
 	private final PasswordEncoder passwordEncoder;
@@ -60,13 +63,11 @@ public class AuthServiceImpl implements AuthService {
 		// Encrypt password
 		user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
-//		// Assign default role
-//		Role defaultRole = roleRepository.findByName(RoleType.ORGANIZATION_ADMIN)
-//				.orElseThrow(() -> new IllegalStateException("Default role ORGANIZATION_ADMIN not found."));
-//
-//		Set<Role> roles = new HashSet<>();
-//		roles.add(defaultRole);
-//		user.setRoles(roles);
+		// Assign default role
+		Role customerRole = roleRepository.findByName(RoleType.CUSTOMER)
+				.orElseThrow(() -> new IllegalStateException("Default CUSTOMER role not found"));
+
+		user.setRole(customerRole);
 
 		// Save user
 		User savedUser = userRepository.save(user);
@@ -81,15 +82,15 @@ public class AuthServiceImpl implements AuthService {
 		User user = userRepository.findByEmail(request.getEmail())
 				.orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-		  // Check if email is verified
-	    if (!user.isEmailVerified()) {
-	        throw new RuntimeException("Please verify your email before logging in.");
-	    }
+		// Check if email is verified
+		if (!user.isEmailVerified()) {
+			throw new RuntimeException("Please verify your email before logging in.");
+		}
 
-	    // Check password
-	    if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-	        throw new RuntimeException("Invalid email or password");
-	    }
+		// Check password
+		if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+			throw new RuntimeException("Invalid email or password");
+		}
 
 		UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
 
@@ -113,6 +114,7 @@ public class AuthServiceImpl implements AuthService {
 		response.setFirstName(user.getFirstName());
 		response.setLastName(user.getLastName());
 		response.setEmail(user.getEmail());
+		response.setRole(user.getRole().getName());
 
 		return response;
 	}
@@ -161,6 +163,7 @@ public class AuthServiceImpl implements AuthService {
 		response.setFirstName(user.getFirstName());
 		response.setLastName(user.getLastName());
 		response.setEmail(user.getEmail());
+		response.setRole(user.getRole().getName());
 
 		return response;
 	}

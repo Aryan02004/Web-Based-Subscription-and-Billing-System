@@ -1,5 +1,7 @@
 package com.app.auth.dto;
 
+import com.app.common.enums.RoleType;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -24,6 +26,8 @@ public class LoginResponse {
 	private String lastName;
 
 	private String email;
+
+	private RoleType role;
 
 	private String refreshToken;
 
