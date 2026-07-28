@@ -1,0 +1,13 @@
+package com.app.common.enums;
+
+public enum RoleType {
+	PLATFORM_OWNER,
+
+	ORGANIZATION_ADMIN,
+
+	ORGANIZATION_MANAGER,
+
+	ORGANIZATION_STAFF,
+
+	CUSTOMER
+}

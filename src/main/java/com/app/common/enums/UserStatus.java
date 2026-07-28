@@ -1,0 +1,11 @@
+package com.app.common.enums;
+
+public enum UserStatus {
+	PENDING_VERIFICATION,
+
+	ACTIVE,
+
+	SUSPENDED,
+
+	DEACTIVATED
+}

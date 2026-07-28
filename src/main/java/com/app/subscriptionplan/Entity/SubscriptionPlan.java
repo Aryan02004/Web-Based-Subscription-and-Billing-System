@@ -8,9 +8,13 @@ import org.hibernate.type.SqlTypes;
 
 import com.app.common.entity.BaseEntity;
 import com.app.common.enums.BillingCycle;
+import com.app.organization.entity.Organization;
 
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -47,6 +51,10 @@ public class SubscriptionPlan extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "billing_cycle", nullable = false)
     private BillingCycle billingCycle;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
 	public String getPlanName() {
 		return planName;
@@ -111,6 +119,12 @@ public class SubscriptionPlan extends BaseEntity {
 	public void setBillingCycle(BillingCycle billingCycle) {
 		this.billingCycle = billingCycle;
 	}
+
+	public void setOrganization(Organization organization2) {
+		this.organization=organization2;
+		
+	}
+	
     
     
 }
