@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Razorpay Test Payment</title>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+</head>
+<body>
+
+	<h2>Subscription Billing System - Razorpay Test</h2>
+
+	<button onclick="payNow()">Pay ₹1179</button>
+
+	<script>
+
+const token = "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJsYWRkaGFzYW5rZXQ3MDVAZ21haWwuY29tIiwiaWF0IjoxNzg1MTQzMjE3LCJleHAiOjE3ODUyMjk2MTd9.6IrIa79NCS064Lud-vPW8ZnkqsCUrGLtNhUiFbzS5qp8pUt-ejvah7vpa6g579_1";
+
+async function payNow() {
+
+    const paymentId = 1;
+
+    const response = await fetch(
+        `http://localhost:8080/api/payments/${paymentId}/create-order`,
+        {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        }
+    );
+
+  console.log("Response Status:", response.status);
+
+const text = await response.text();
+
+console.log("Raw Response:", text);
+
+const order = JSON.parse(text);
+
+console.log("Parsed Order:", order);
+
+    var options = {
+
+        key: "rzp_test_TIaWG4Hmgvkqha",
+
+        amount: order.amount,
+
+        currency: order.currency,
+
+        name: "Subscription Billing",
+
+        description: "Subscription Payment",
+
+        order_id: order.id,
+
+        handler: async function (response) {
+
+            console.log(response);
+
+            const verifyResponse = await fetch(
+                `http://localhost:8080/api/payments/${paymentId}/verify`,
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+
+                    body: JSON.stringify({
+
+                        razorpayOrderId: response.razorpay_order_id,
+
+                        razorpayPaymentId: response.razorpay_payment_id,
+
+                        razorpaySignature: response.razorpay_signature
+
+                    })
+                }
+            );
+
+            const result = await verifyResponse.json();
+
+            console.log(result);
+
+            alert("Payment Successful");
+
+        }
+
+    };
+
+    var rzp = new Razorpay(options);
+
+    rzp.open();
+
+}
+
+</script>
+
+</body>
+</html>

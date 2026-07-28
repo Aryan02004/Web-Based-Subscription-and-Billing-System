@@ -7,16 +7,18 @@ import com.app.organization.dto.OrganizationRequest;
 import com.app.organization.dto.OrganizationResponse;
 
 public interface OrganizationService {
-	
+
 	void addMember(Long organizationId, AddMemberRequest request);
 
-    OrganizationResponse createOrganization(OrganizationRequest request);
+	OrganizationResponse createOrganization(OrganizationRequest request);
 
-    OrganizationResponse getOrganizationById(Long id);
+	OrganizationResponse getOrganizationById(Long id);
 
-    List<OrganizationResponse> getAllOrganizations();
+	List<OrganizationResponse> getAllOrganizations();
 
-    OrganizationResponse updateOrganization(Long id, OrganizationRequest request);
+	OrganizationResponse updateOrganization(Long id, OrganizationRequest request);
 
-    void deleteOrganization(Long id);
+	void deleteOrganization(Long id);
+
+	String generatePublicLink();
 }

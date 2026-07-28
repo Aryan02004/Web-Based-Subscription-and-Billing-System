@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.app.organization.dto.OrganizationRequest;
 import com.app.organization.dto.OrganizationResponse;
@@ -31,38 +32,41 @@ public class OrganizationController {
 	public OrganizationController(OrganizationService organizationService) {
 		this.organizationService = organizationService;
 	}
-	
+
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public OrganizationResponse createOrganization(
-			@Valid @RequestBody OrganizationRequest request) {
-		return  organizationService.createOrganization(request);
-		
+	public OrganizationResponse createOrganization(@Valid @RequestBody OrganizationRequest request) {
+		return organizationService.createOrganization(request);
+
 	}
-	
+
 	@GetMapping("/{id}")
 	public OrganizationResponse getOrgnization(@PathVariable Long id) {
-		
+
 		return organizationService.getOrganizationById(id);
 	}
-	
+
 	@GetMapping
-	public List<OrganizationResponse> getAllOrganizationResponses(){
+	public List<OrganizationResponse> getAllOrganizationResponses() {
 		return organizationService.getAllOrganizations();
 	}
-	
-	@PutMapping("/{id}")
-	public OrganizationResponse updateOrganization(
-	        @PathVariable Long id,
-	        @Valid @RequestBody OrganizationRequest request) {
 
-	    return organizationService.updateOrganization(id, request);
+	@PutMapping("/{id}")
+	public OrganizationResponse updateOrganization(@PathVariable Long id,
+			@Valid @RequestBody OrganizationRequest request) {
+
+		return organizationService.updateOrganization(id, request);
 	}
-	
+
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void deleteOrganization(@PathVariable Long id)
-{
+	public void deleteOrganization(@PathVariable Long id) {
 		organizationService.deleteOrganization(id);
-		}
+	}
+
+	@PostMapping("/generate-link")
+	public ResponseEntity<String> generatePublicLink() {
+
+		return ResponseEntity.ok(organizationService.generatePublicLink());
+	}
 }

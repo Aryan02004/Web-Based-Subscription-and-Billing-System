@@ -14,25 +14,31 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name="organizations")
+@Table(name = "organizations")
 @Setter
 @Getter
 @NoArgsConstructor
-public class Organization extends BaseEntity{
-	
+public class Organization extends BaseEntity {
+
 	@Column(nullable = false)
 	private String name;
-	
+
 	@Column
 	private String industry;
-	
-	@Column(name ="contact_email")
+
+	@Column(name = "contact_email")
 	private String contactEmail;
-	
+
 	@Column(nullable = false)
 	private String status;
-	
-	 @ManyToOne(fetch = FetchType.LAZY)
-	    @JoinColumn(name = "created_by", nullable = false)
-	    private User createdBy;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "created_by", nullable = false)
+	private User createdBy;
+
+	@Column(name = "public_link_token", unique = true)
+	private String publicLinkToken;
+
+	@Column(name = "link_active")
+	private Boolean linkActive = true;
 }
