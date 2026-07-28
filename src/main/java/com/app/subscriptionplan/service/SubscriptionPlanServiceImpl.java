@@ -11,11 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.app.auth.entity.User;
 import com.app.auth.repository.UserRepository;
 import com.app.organization.entity.Organization;
-import com.app.organization.repository.OrganizationRepository;
-import com.app.organization.service.OrganizationService;
-import com.app.subscriptionplan.entity.SubscriptionPlan;
 import com.app.organization.entity.OrganizationUser;
+import com.app.organization.repository.OrganizationRepository;
 import com.app.organization.repository.OrganizationUserRepository;
+import com.app.organization.service.OrganizationService;
 import com.app.subscriptionplan.entity.SubscriptionPlan;
 import com.app.subscriptionplan.repo.SubscriptionPlanRepo;
 
@@ -31,8 +30,6 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 	@Autowired
 	private OrganizationRepository organizationRepository;
 
-
-
 	@Autowired
 	private OrganizationUserRepository organizationUserRepository;
 
@@ -44,7 +41,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findByUser(user)
+		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return organizationUser.getOrganization();
@@ -82,30 +79,27 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findByUser(user)
+		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return repository.findByOrganization(organizationUser.getOrganization());
 	}
 
-	
 	@Override
 	public SubscriptionPlan getPlanById(Long id) {
 		// TODO Auto-generated method stub
 		Organization organization = getCurrentOrganization();
 
 		return repository.findByIdAndOrganization(id, organization)
-		        .orElseThrow(() -> new RuntimeException("Plan not found"));
+				.orElseThrow(() -> new RuntimeException("Plan not found"));
 	}
 
 	@Override
 	public SubscriptionPlan updatePlan(Long id, SubscriptionPlan plan) {
 		Organization organization = getCurrentOrganization();
 
-		SubscriptionPlan existingPlan =
-		repository.findByIdAndOrganization(id, organization)
-		        .orElseThrow(() -> new RuntimeException("Plan not found"));
-
+		SubscriptionPlan existingPlan = repository.findByIdAndOrganization(id, organization)
+				.orElseThrow(() -> new RuntimeException("Plan not found"));
 
 		existingPlan.setPlanName(plan.getPlanName());
 		existingPlan.setDescription(plan.getDescription());
@@ -124,9 +118,8 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 		// TODO Auto-generated method stub
 		Organization organization = getCurrentOrganization();
 
-		SubscriptionPlan plan =
-		repository.findByIdAndOrganization(id, organization)
-		        .orElseThrow(() -> new RuntimeException("Plan not found"));
+		SubscriptionPlan plan = repository.findByIdAndOrganization(id, organization)
+				.orElseThrow(() -> new RuntimeException("Plan not found"));
 
 		repository.delete(plan);
 	}

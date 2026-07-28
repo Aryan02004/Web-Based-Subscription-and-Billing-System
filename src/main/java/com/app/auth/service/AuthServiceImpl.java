@@ -24,6 +24,8 @@ import com.app.auth.repository.RefreshTokenRepository;
 import com.app.auth.repository.RoleRepository;
 import com.app.auth.repository.UserRepository;
 import com.app.auth.validator.PasswordValidator;
+import com.app.common.enums.OrganizationStatus;
+import com.app.common.enums.OrganizationUserStatus;
 import com.app.common.enums.RoleType;
 import com.app.exception.InvalidTokenException;
 import com.app.exception.ResourceNotFoundException;
@@ -55,7 +57,6 @@ public class AuthServiceImpl implements AuthService {
 	private final JwtService jwtService;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final CustomUserDetailsService userDetailsService;
-	private final RoleRepository roleRepository;
 	private final OrganizationRepository organizationRepository;
 	private final OrganizationUserRepository organizationUserRepository;
 	private final OtpService otpService;
@@ -94,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
 		Organization organization = new Organization();
 		organization.setName(savedUser.getFirstName() + "'s Organization");
 		organization.setContactEmail(savedUser.getEmail());
-		organization.setStatus("ACTIVE");
+		organization.setStatus(OrganizationStatus.PENDING);
 		organization.setCreatedBy(savedUser);
 
 		organization = organizationRepository.save(organization);
@@ -105,7 +106,7 @@ public class AuthServiceImpl implements AuthService {
 		organizationUser.setUser(savedUser);
 		organizationUser.setRole(adminRole);
 		organizationUser.setJoinedAt(LocalDateTime.now());
-		organizationUser.setStatus("ACTIVE");
+		organizationUser.setStatus(OrganizationUserStatus.ACTIVE);
 
 		organizationUserRepository.save(organizationUser);
 

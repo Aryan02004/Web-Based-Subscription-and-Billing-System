@@ -60,7 +60,7 @@ public class PaymentServiceImpl implements PaymentService {
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findByUser(user)
+		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return organizationUser.getOrganization().getId();

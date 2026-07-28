@@ -1,9 +1,7 @@
 package com.app.organization.repository;
 
-<<<<<<< HEAD
+
 import java.util.List;
-=======
->>>>>>> origin/feature/subscription
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;

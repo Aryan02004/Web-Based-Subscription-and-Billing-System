@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.app.organization.entity.Organization;
 import com.app.organization.repository.OrganizationRepository;
-import com.app.subscriptionplan.Entity.SubscriptionPlan;
+import com.app.subscriptionplan.entity.SubscriptionPlan;
 import com.app.subscriptionplan.repo.SubscriptionPlanRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -38,7 +38,7 @@ public class SubscriptionServiceImpl implements SubscriptionService{
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         OrganizationUser organizationUser =
-                organizationUserRepository.findByUser(user)
+                organizationUserRepository.findById(user.getId())
                 .orElseThrow(() -> new RuntimeException("Organization not found"));
 
         return organizationUser.getOrganization().getId();
