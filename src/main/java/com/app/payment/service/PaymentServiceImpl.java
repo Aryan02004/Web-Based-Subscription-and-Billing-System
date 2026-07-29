@@ -15,6 +15,9 @@ import com.app.invoice.entity.InvoiceEntity;
 import com.app.invoice.enums.InvoiceStatus;
 import com.app.invoice.pdf.PdfGenerator;
 import com.app.invoice.repository.InvoiceRepository;
+import com.app.notification.enums.NotificationChannel;
+import com.app.notification.enums.NotificationType;
+import com.app.notification.service.NotificationService;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
 import com.app.payment.entity.Payment;
@@ -52,6 +55,9 @@ public class PaymentServiceImpl implements PaymentService {
 	@Autowired
 	private RazorpayService razorpayService;
 
+	@Autowired
+	private NotificationService notificationService;
+
 	private Long getCurrentOrganizationId() {
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -74,6 +80,10 @@ public class PaymentServiceImpl implements PaymentService {
 				.orElseThrow(() -> new RuntimeException("Invoice not found"));
 
 		payment.setInvoice(invoice);
+
+		payment.setAmount(invoice.getTotalAmount());
+
+		payment.setCurrency(invoice.getCurrency());
 
 		payment.setStatus(PaymentStatus.PENDING);
 
@@ -151,11 +161,18 @@ public class PaymentServiceImpl implements PaymentService {
 
 		subscriptionRepository.save(subscription);
 
+		notificationService.createNotification(null, "Payment Successful",
+				"Payment of ₹" + payment.getAmount() + " received for Invoice #" + invoice.getId(),
+				NotificationType.PAYMENT, NotificationChannel.IN_APP);
+
+		notificationService.createNotification(null, "Subscription Activated",
+				"Subscription has been activated successfully.", NotificationType.SUBSCRIPTION,
+				NotificationChannel.IN_APP);
+
 		byte[] pdf = pdfGenerator.generateInvoicePdf(invoice);
 		System.out.println("========== SENDING EMAIL ==========");
 		emailService.sendInvoice(invoice, pdf);
 		System.out.println("========== EMAIL SENT ==========");
-	
 
 		return paymentRepository.save(payment);
 	}

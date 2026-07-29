@@ -1,5 +1,6 @@
 package com.app.invoice.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +23,9 @@ import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
 import com.app.subscription.entity.SubscriptionEntity;
 import com.app.subscription.repository.SubscriptionRepository;
+import com.app.notification.enums.NotificationChannel;
+import com.app.notification.enums.NotificationType;
+import com.app.notification.service.NotificationService;
 
 @Service
 public class InvoiceServiceImpl implements InvoiceService {
@@ -43,6 +47,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 	@Autowired
 	private SubscriptionRepository subscriptionRepository;
+
+	@Autowired
+	private NotificationService notificationService;
 
 	private Long getCurrentOrganizationId() {
 
@@ -69,6 +76,15 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 		invoice.setSubscription(subscription);
 
+		BigDecimal subtotal = subscription.getPlan().getPrice();
+		BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
+		BigDecimal total = subtotal.add(tax);
+
+		invoice.setSubtotal(subtotal);
+		invoice.setTaxAmount(tax);
+		invoice.setTotalAmount(total);
+		invoice.setCurrency("INR");
+
 		invoice.setGeneratedAt(LocalDateTime.now());
 
 		if (invoice.getStatus() == null) {
@@ -78,6 +94,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 		invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
 
 		InvoiceEntity savedInvoice = repository.save(invoice);
+		notificationService.createNotification(null, "Invoice Generated",
+				"Invoice " + savedInvoice.getInvoiceNumber() + " has been generated successfully.",
+				NotificationType.INVOICE, NotificationChannel.IN_APP);
 
 		// Generate PDF
 		byte[] pdf = pdfGenerator.generateInvoicePdf(savedInvoice);
