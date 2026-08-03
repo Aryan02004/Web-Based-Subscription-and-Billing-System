@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,9 @@ import com.app.auth.entity.Role;
 import com.app.auth.entity.User;
 import com.app.auth.repository.RoleRepository;
 import com.app.auth.repository.UserRepository;
+import com.app.notification.enums.NotificationChannel;
+import com.app.notification.enums.NotificationType;
+import com.app.notification.service.NotificationService;
 import com.app.organization.dto.AddMemberRequest;
 import com.app.organization.dto.OrganizationRequest;
 import com.app.organization.dto.OrganizationResponse;
@@ -24,20 +28,17 @@ import com.app.organization.repository.OrganizationUserRepository;
 @Service
 public class OrganizationServiceImpl implements OrganizationService {
 
-	private final OrganizationRepository organizationRepository;
-	private final OrganizationUserRepository organizationUserRepository;
-	private final UserRepository userRepository;
-	private final RoleRepository roleRepository;
+	@Autowired
+	private OrganizationRepository organizationRepository;
+	@Autowired
+	private OrganizationUserRepository organizationUserRepository;
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private RoleRepository roleRepository;
 
-	public OrganizationServiceImpl(OrganizationRepository organizationRepository,
-			OrganizationUserRepository organizationUserRepository, UserRepository userRepository,
-			RoleRepository roleRepository) {
-		super();
-		this.organizationRepository = organizationRepository;
-		this.organizationUserRepository = organizationUserRepository;
-		this.userRepository = userRepository;
-		this.roleRepository = roleRepository;
-	}
+	@Autowired
+	private NotificationService notificationService;
 
 	@Override
 	public OrganizationResponse createOrganization(OrganizationRequest request) {
@@ -54,6 +55,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 		organization.setCreatedBy(user);
 
 		Organization savedOrganization = organizationRepository.save(organization);
+		notificationService.createUserNotification("New Organization Registered",
+				savedOrganization.getName() + " has registered successfully.", NotificationType.ADMIN,
+				NotificationChannel.IN_APP);
 
 		return mapToResponse(savedOrganization);
 	}
@@ -156,7 +160,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 		// If already generated, return existing token
 		if (organization.getPublicLinkToken() != null && !organization.getPublicLinkToken().isBlank()) {
 
-			return "http://localhost:8080/public/org/" + organization.getPublicLinkToken();
+			return "http://localhost:8080/billing/" + organization.getPublicLinkToken();
 		}
 
 		String token = UUID.randomUUID().toString();
@@ -166,6 +170,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 		organizationRepository.save(organization);
 
-		return "http://localhost:8080/public/org/" + token;
+		return "http://localhost:8080/billing/" + token;
 	}
 }

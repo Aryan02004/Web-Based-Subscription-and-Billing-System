@@ -8,12 +8,16 @@ import org.springframework.stereotype.Service;
 
 import com.app.auth.entity.User;
 import com.app.auth.repository.UserRepository;
+import com.app.customer.entity.CustomerEntity;
+import com.app.customer.repository.CustomerRepository;
+import com.app.invoice.email.EmailService;
 import com.app.notification.entity.NotificationEntity;
 import com.app.notification.enums.NotificationChannel;
 import com.app.notification.enums.NotificationStatus;
 import com.app.notification.enums.NotificationType;
 import com.app.notification.repository.NotificationRepository;
 import com.app.notification.service.NotificationService;
+import com.app.notification.template.ReminderEmailTemplate;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +27,8 @@ public class NotificationServiceImpl implements NotificationService {
 
 	private final NotificationRepository notificationRepository;
 	private final UserRepository userRepository;
+	private final CustomerRepository customerRepository;
+	private final EmailService emailService;
 
 	/**
 	 * Returns the ID of the currently logged-in user.
@@ -60,18 +66,22 @@ public class NotificationServiceImpl implements NotificationService {
 
 		NotificationEntity notification = new NotificationEntity();
 
-		// Recipient is CUSTOMER
 		notification.setCustomerId(customerId);
-
 		notification.setTitle(title);
 		notification.setMessage(message);
 		notification.setType(type);
 		notification.setChannel(channel);
-
 		notification.setStatus(NotificationStatus.SENT);
 		notification.setSentAt(LocalDateTime.now());
 
 		notificationRepository.save(notification);
+
+		CustomerEntity customer = customerRepository.findById(customerId)
+				.orElseThrow(() -> new RuntimeException("Customer not found"));
+
+		String html = ReminderEmailTemplate.build(customer, message);
+
+//		emailService.sendHtmlEmail(customer.getEmail(), title, html);
 	}
 
 	@Override

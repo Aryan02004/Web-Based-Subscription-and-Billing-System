@@ -15,4 +15,6 @@ public interface CustomerService {
     CustomerEntity updateCustomer(Long id, CustomerEntity customer);
 
     void deleteCustomer(Long id);
+
+	CustomerEntity createCustomer(CustomerEntity customer, Long organizationId);
 }

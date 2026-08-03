@@ -11,9 +11,11 @@ import com.app.auth.entity.User;
 import com.app.auth.repository.UserRepository;
 import com.app.customer.entity.CustomerEntity;
 import com.app.customer.repository.CustomerRepository;
+import com.app.invoice.email.EmailService;
 import com.app.notification.enums.NotificationChannel;
 import com.app.notification.enums.NotificationType;
 import com.app.notification.service.NotificationService;
+import com.app.notification.template.WelcomeEmailTemplate;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
 
@@ -31,6 +33,9 @@ public class CustomerServiceImpl implements CustomerService {
 
 	@Autowired
 	private NotificationService notificationService;
+
+	@Autowired
+	private EmailService emailService;
 
 	private Long getCurrentOrganizationId() {
 
@@ -52,8 +57,29 @@ public class CustomerServiceImpl implements CustomerService {
 		customer.setOrganizationId(getCurrentOrganizationId());
 
 		CustomerEntity savedCustomer = repository.save(customer);
+		String html = WelcomeEmailTemplate.build(savedCustomer);
 
-		notificationService.createNotification(null, "Customer Added",
+		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to Subscriptor", html);
+
+		notificationService.createCustomerNotification(savedCustomer.getId(), "Customer Added",
+				savedCustomer.getFirstName() + " " + savedCustomer.getLastName() + " has been added successfully.",
+				NotificationType.CUSTOMER, NotificationChannel.IN_APP);
+
+		return savedCustomer;
+	}
+
+	@Override
+	public CustomerEntity createCustomer(CustomerEntity customer, Long organizationId) {
+
+		customer.setOrganizationId(organizationId);
+
+		CustomerEntity savedCustomer = repository.save(customer);
+
+		String html = WelcomeEmailTemplate.build(savedCustomer);
+
+		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to Subscriptor", html);
+
+		notificationService.createCustomerNotification(savedCustomer.getId(), "Customer Added",
 				savedCustomer.getFirstName() + " " + savedCustomer.getLastName() + " has been added successfully.",
 				NotificationType.CUSTOMER, NotificationChannel.IN_APP);
 

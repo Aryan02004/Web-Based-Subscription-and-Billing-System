@@ -55,4 +55,45 @@ public class EmailService {
 			throw new RuntimeException("Failed to send email", e);
 		}
 	}
+
+	public void sendSimpleEmail(String to, String subject, String body) {
+
+		try {
+
+			MimeMessage message = mailSender.createMimeMessage();
+
+			MimeMessageHelper helper = new MimeMessageHelper(message, false);
+
+			helper.setFrom("subscriptorr@gmail.com");
+			helper.setTo(to);
+			helper.setSubject(subject);
+			helper.setText(body);
+
+			mailSender.send(message);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to send email", e);
+		}
+	}
+	
+	public void sendHtmlEmail(String to, String subject, String htmlBody) {
+
+	    try {
+
+	        MimeMessage message = mailSender.createMimeMessage();
+
+	        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+	        helper.setFrom("subscriptorr@gmail.com");
+	        helper.setTo(to);
+	        helper.setSubject(subject);
+
+	        helper.setText(htmlBody, true);
+
+	        mailSender.send(message);
+
+	    } catch (Exception e) {
+	        throw new RuntimeException("Failed to send HTML email", e);
+	    }
+	}
 }

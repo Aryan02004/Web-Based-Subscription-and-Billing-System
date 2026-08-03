@@ -9,11 +9,14 @@ import org.springframework.stereotype.Repository;
 import com.app.organization.entity.Organization;
 import com.app.subscriptionplan.Entity.SubscriptionPlan;
 
-
 @Repository
 public interface SubscriptionPlanRepo extends JpaRepository<SubscriptionPlan, Long> {
 
-    boolean existsByPlanName(String planName);
-    List<SubscriptionPlan> findByOrganization(Organization organization);
-    Optional<SubscriptionPlan> findByIdAndOrganization(Long id, Organization organization);
+	boolean existsByPlanName(String planName);
+
+	List<SubscriptionPlan> findByOrganization(Organization organization);
+
+	Optional<SubscriptionPlan> findByIdAndOrganization(Long id, Organization organization);
+
+	List<SubscriptionPlan> findByOrganizationAndActiveTrue(Organization organization);
 }

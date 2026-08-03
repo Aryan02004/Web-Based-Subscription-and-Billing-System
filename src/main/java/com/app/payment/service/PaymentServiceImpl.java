@@ -10,6 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.app.auth.entity.User;
 import com.app.auth.repository.UserRepository;
+import com.app.customer.entity.CustomerEntity;
+import com.app.customer.repository.CustomerRepository;
 import com.app.invoice.email.EmailService;
 import com.app.invoice.entity.InvoiceEntity;
 import com.app.invoice.enums.InvoiceStatus;
@@ -18,6 +20,8 @@ import com.app.invoice.repository.InvoiceRepository;
 import com.app.notification.enums.NotificationChannel;
 import com.app.notification.enums.NotificationType;
 import com.app.notification.service.NotificationService;
+import com.app.notification.template.PaymentFailedEmailTemplate;
+import com.app.notification.template.PaymentSuccessEmailTemplate;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
 import com.app.payment.entity.Payment;
@@ -58,6 +62,9 @@ public class PaymentServiceImpl implements PaymentService {
 	@Autowired
 	private NotificationService notificationService;
 
+	@Autowired
+	private CustomerRepository customerRepository;
+
 	private Long getCurrentOrganizationId() {
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -85,6 +92,20 @@ public class PaymentServiceImpl implements PaymentService {
 
 		payment.setCurrency(invoice.getCurrency());
 
+		payment.setStatus(PaymentStatus.PENDING);
+
+		return paymentRepository.save(payment);
+	}
+
+	@Override
+	public Payment createPayment(Payment payment, Long organizationId) {
+
+		InvoiceEntity invoice = invoiceRepository.findById(payment.getInvoice().getId())
+				.orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+		payment.setInvoice(invoice);
+		payment.setAmount(invoice.getTotalAmount());
+		payment.setCurrency(invoice.getCurrency());
 		payment.setStatus(PaymentStatus.PENDING);
 
 		return paymentRepository.save(payment);
@@ -143,6 +164,14 @@ public class PaymentServiceImpl implements PaymentService {
 
 			paymentRepository.save(payment);
 
+			CustomerEntity customer = customerRepository
+					.findById(payment.getInvoice().getSubscription().getCustomerId())
+					.orElseThrow(() -> new RuntimeException("Customer not found"));
+
+			String html = PaymentFailedEmailTemplate.build(customer, payment.getFailureReason());
+
+			emailService.sendHtmlEmail(customer.getEmail(), "Payment Failed", html);
+
 			throw new RuntimeException("Invalid Razorpay Signature");
 		}
 
@@ -158,14 +187,20 @@ public class PaymentServiceImpl implements PaymentService {
 		SubscriptionEntity subscription = invoice.getSubscription();
 
 		subscription.setStatus("ACTIVE");
-
 		subscriptionRepository.save(subscription);
 
-		notificationService.createNotification(null, "Payment Successful",
+		CustomerEntity customer = customerRepository.findById(subscription.getCustomerId())
+				.orElseThrow(() -> new RuntimeException("Customer not found"));
+
+		String html = PaymentSuccessEmailTemplate.build(customer, payment.getAmount().toString());
+
+		emailService.sendHtmlEmail(customer.getEmail(), "Payment Successful", html);
+
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Payment Successful",
 				"Payment of ₹" + payment.getAmount() + " received for Invoice #" + invoice.getId(),
 				NotificationType.PAYMENT, NotificationChannel.IN_APP);
 
-		notificationService.createNotification(null, "Subscription Activated",
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Subscription Activated",
 				"Subscription has been activated successfully.", NotificationType.SUBSCRIPTION,
 				NotificationChannel.IN_APP);
 

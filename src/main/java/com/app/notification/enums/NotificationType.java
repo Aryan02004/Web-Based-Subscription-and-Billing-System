@@ -6,6 +6,8 @@ public enum NotificationType {
     INVOICE,
     CUSTOMER,
     SUBSCRIPTION,
-    SYSTEM
+    SYSTEM,
+    ORGANIZATION,
+    ADMIN
 
 }

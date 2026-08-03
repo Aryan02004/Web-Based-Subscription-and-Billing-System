@@ -50,6 +50,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 	@Autowired
 	private NotificationService notificationService;
+	
+	@Autowired
+	private InvoiceRepository invoiceRepository;
 
 	private Long getCurrentOrganizationId() {
 
@@ -94,7 +97,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 		invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
 
 		InvoiceEntity savedInvoice = repository.save(invoice);
-		notificationService.createNotification(null, "Invoice Generated",
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Invoice Generated",
 				"Invoice " + savedInvoice.getInvoiceNumber() + " has been generated successfully.",
 				NotificationType.INVOICE, NotificationChannel.IN_APP);
 
@@ -105,6 +108,29 @@ public class InvoiceServiceImpl implements InvoiceService {
 		// emailService.sendInvoice(savedInvoice, pdf);
 
 		return savedInvoice;
+	}
+	
+	@Override
+	public InvoiceEntity generateInvoice(SubscriptionEntity subscription) {
+
+	    InvoiceEntity invoice = new InvoiceEntity();
+
+	    invoice.setSubscription(subscription);
+
+	    BigDecimal subtotal = subscription.getPlan().getPrice();
+	    BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
+	    BigDecimal total = subtotal.add(tax);
+
+	    invoice.setSubtotal(subtotal);
+	    invoice.setTaxAmount(tax);
+	    invoice.setTotalAmount(total);
+	    invoice.setCurrency("INR");
+
+	    invoice.setGeneratedAt(LocalDateTime.now());
+	    invoice.setStatus(InvoiceStatus.PENDING);
+	    invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
+
+	    return invoiceRepository.save(invoice);
 	}
 
 	@Override

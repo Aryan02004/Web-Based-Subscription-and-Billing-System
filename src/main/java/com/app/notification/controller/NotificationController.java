@@ -4,12 +4,8 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.app.notification.entity.NotificationEntity;
-import com.app.notification.enums.NotificationChannel;
-import com.app.notification.enums.NotificationType;
 import com.app.notification.service.NotificationService;
-
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -32,15 +28,15 @@ public class NotificationController {
 
 		return ResponseEntity.ok("Notification marked as read.");
 	}
-
-	@PostMapping("/test")
-	public ResponseEntity<String> createCustomerTestNotification() {
-
-		notificationService.createCustomerNotification(1L, "Subscription Expiry",
-				"Your subscription will expire in 3 days.", NotificationType.SUBSCRIPTION, NotificationChannel.IN_APP);
-
-		return ResponseEntity.ok("Customer notification created successfully.");
-	}
+//
+//	@PostMapping("/test/{customerId}")
+//	public ResponseEntity<String> createCustomerTestNotification(@PathVariable Long customerId) {
+//
+//		notificationService.createCustomerNotification(customerId, "Subscription Expiry",
+//				"Your subscription will expire in 3 days.", NotificationType.SUBSCRIPTION, NotificationChannel.IN_APP);
+//
+//		return ResponseEntity.ok("Customer notification created successfully.");
+//	}
 
 	@GetMapping("/customer/{customerId}")
 	public ResponseEntity<List<NotificationEntity>> getCustomerNotifications(@PathVariable Long customerId) {

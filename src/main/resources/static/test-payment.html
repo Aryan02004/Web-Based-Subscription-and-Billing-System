@@ -14,11 +14,11 @@
 
 	<script>
 
-const token = "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJsYWRkaGFzYW5rZXQ3MDVAZ21haWwuY29tIiwiaWF0IjoxNzg1MjQzNDY3LCJleHAiOjE3ODUzMjk4Njd9.Qo3_nfMXgOhGk8ma9XBTFvKlSEHSAr_HkPMVNi2H-51F6JXSzBcqZobCfk_CpYyE";
+const token = "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJsYWRkaGFzYW5rZXQ3MDVAZ21haWwuY29tIiwiaWF0IjoxNzg1NTY5MDg0LCJleHAiOjE3ODU2NTU0ODR9.ZArpSK_J3mq-RJWrjAlyau2yNRNqrMf3I4lron-CvoMbCAW0S8UuDdAdRmuETDai";
 
 async function payNow() {
 
-    const paymentId = 1;
+    const paymentId = 6;
 
     const response = await fetch(
         `http://localhost:8080/api/payments/${paymentId}/create-order`,
