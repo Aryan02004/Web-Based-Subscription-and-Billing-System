@@ -299,19 +299,18 @@ public class OrganizationServiceImpl implements OrganizationService {
 		List<OrganizationUser> organizationUsers = organizationUserRepository.findByUserId(user.getId());
 
 		return organizationUsers.stream().map(orgUser -> {
+			Organization organization = orgUser.getOrganization();
 
 			MyOrganizationResponse dto = new MyOrganizationResponse();
-
-			dto.setOrganizationId(orgUser.getOrganization().getId());
-
-			dto.setOrganizationName(orgUser.getOrganization().getName());
-
-			dto.setStatus(orgUser.getOrganization().getStatus());
-
+			dto.setOrganizationId(organization.getId());
+			dto.setOrganizationName(organization.getName());
+			dto.setIndustry(organization.getIndustry());
+			dto.setContactEmail(organization.getContactEmail());
+			dto.setStatus(organization.getStatus());
 			dto.setRole(orgUser.getRole().getName().name());
-
+			dto.setCreatedAt(organization.getCreatedAt());
+			dto.setRejectionReason(organization.getRejectionReason());
 			return dto;
-
 		}).toList();
 	}
 

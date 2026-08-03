@@ -1,5 +1,7 @@
 package com.app.organization.dto;
 
+import java.time.LocalDateTime;
+
 import com.app.common.enums.OrganizationStatus;
 
 import lombok.Getter;
@@ -20,5 +22,9 @@ public class MyOrganizationResponse {
 	private String contactEmail;
 
 	private String role;
+
+	private LocalDateTime createdAt;
+
+	private String rejectionReason;
 
 }
