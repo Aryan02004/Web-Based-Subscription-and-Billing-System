@@ -11,6 +11,94 @@ import {
 } from "lucide-react";
 import { api } from "../lib/api";
 
+const getFriendlyErrorMessage = (error) => {
+  const candidates = [
+    error?.data,
+    error?.response?.data,
+    error?.originalError?.response?.data,
+    error?.message,
+    error?.originalError?.message,
+  ];
+
+  const extractMessage = (value) => {
+    if (!value) {
+      return "";
+    }
+
+    if (typeof value === "string") {
+      return value.trim();
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(extractMessage).find(Boolean) || "";
+    }
+
+    if (typeof value === "object") {
+      const directMessage = value.message || value.error || value.detail || value.title || "";
+      if (typeof directMessage === "string" && directMessage.trim()) {
+        return directMessage.trim();
+      }
+
+      return Object.values(value)
+        .map(extractMessage)
+        .find(Boolean) || "";
+    }
+
+    return "";
+  };
+
+  const message = candidates.map(extractMessage).find(Boolean) || "";
+  const normalized = message.toLowerCase();
+
+  if (!message) {
+    return "We couldn’t create your account. Please try again.";
+  }
+
+  if (normalized.includes("network") || normalized.includes("failed to fetch") || normalized.includes("timeout") || normalized.includes("load failed")) {
+    return "We couldn’t reach the server. Please check your connection and try again.";
+  }
+
+  if (
+    normalized.includes("already registered") ||
+    normalized.includes("already exists") ||
+    normalized.includes("email is already") ||
+    normalized.includes("email already") ||
+    normalized.includes("duplicate") ||
+    /(email|user).*(already|registered|exists|duplicate)/.test(normalized)
+  ) {
+    return "An account with this email already exists. Please try logging in instead.";
+  }
+
+  if (
+    normalized.includes("password") &&
+    (normalized.includes("weak") ||
+      normalized.includes("invalid") ||
+      normalized.includes("must") ||
+      normalized.includes("contain") ||
+      normalized.includes("uppercase") ||
+      normalized.includes("lowercase") ||
+      normalized.includes("number") ||
+      normalized.includes("special") ||
+      normalized.includes("character"))
+  ) {
+    return "Please choose a stronger password that includes at least one uppercase letter, one number, and one special character.";
+  }
+
+  if (normalized.includes("required") || normalized.includes("cannot be empty")) {
+    return "Please fill in all required fields before continuing.";
+  }
+
+  if (normalized.includes("forbidden") || normalized.includes("access denied")) {
+    return "Your registration request is not allowed right now. Please contact support.";
+  }
+
+  if (normalized.includes("server") || normalized.includes("internal error") || normalized.includes("unexpected")) {
+    return "Something went wrong on our side. Please try again in a moment.";
+  }
+
+  return "We couldn’t create your account. Please try again.";
+};
+
 const trustPoints = [
   "UPI, cards, and recurring billing support",
   "GST-friendly invoices and local billing data",
@@ -40,8 +128,24 @@ function Register() {
     setError("");
     setMessage("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
+    const firstName = formData.firstName.trim();
+    const lastName = formData.lastName.trim();
+    const email = formData.email.trim();
+    const password = formData.password;
+    const confirmPassword = formData.confirmPassword;
+
+    if (!firstName || !email || !password || !confirmPassword) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please re-enter them.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -49,24 +153,24 @@ function Register() {
 
     try {
       const response = await api.auth.register({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim() || null,
-        email: formData.email.trim(),
-        password: formData.password,
+        firstName,
+        lastName: lastName || null,
+        email,
+        password,
       });
 
       setMessage(response.message || "Registration successful.");
       navigate("/verify-email", {
         state: {
           userId: response.userId,
-          email: formData.email.trim(),
+          email,
           message:
             response.message ||
             "Registration complete. Please log in after verifying your email, if required.",
         },
       });
     } catch (requestError) {
-      setError(requestError.message || "Registration failed.");
+      setError(getFriendlyErrorMessage(requestError));
     } finally {
       setLoading(false);
     }
@@ -94,17 +198,17 @@ function Register() {
           </div>
 
           <div className="relative z-10 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
+            <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
               <p className="text-sm text-cyan-100">Fast integration</p>
               <p className="mt-2 text-lg font-bold">Connect in minutes</p>
             </div>
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
+            <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
               <p className="text-sm text-cyan-100">Secure ledger</p>
               <p className="mt-2 text-lg font-bold">
                 Protect your revenue data
               </p>
             </div>
-            <div className="sm:col-span-2 rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
+            <div className="sm:col-span-2 rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400 text-slate-950">
                   <ShieldCheck className="h-5 w-5" />
@@ -121,8 +225,8 @@ function Register() {
         </section>
 
         <section className="flex items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
-          <div className="w-full max-w-[560px]">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/50 sm:p-8">
+          <div className="w-full max-w-140">
+            <div className="rounded-4xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/50 sm:p-8">
               <div className="mb-8 space-y-2">
                 <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-700">
                   Create account

@@ -2,6 +2,47 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, Globe2, Lock, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import { api } from "../lib/api";
+import { getStoredUser } from "../lib/api/client";
+
+const getFriendlyErrorMessage = (error) => {
+  const rawMessage = error?.data?.message || error?.message || "";
+  const message = typeof rawMessage === "string" ? rawMessage.trim() : "";
+  const normalized = message.toLowerCase();
+
+  if (!message) {
+    return "We couldn’t sign you in. Please try again.";
+  }
+
+  if (normalized.includes("network") || normalized.includes("failed to fetch") || normalized.includes("timeout") || normalized.includes("load failed")) {
+    return "We couldn’t reach the server. Please check your connection and try again.";
+  }
+
+  if (normalized.includes("verify your email") || normalized.includes("email verified")) {
+    return "Please verify your email address before signing in.";
+  }
+
+  if (normalized.includes("invalid email or password") || normalized.includes("bad credentials") || normalized.includes("unauthorized") || normalized.includes("authentication failed")) {
+    return "The email or password you entered is incorrect. Please try again.";
+  }
+
+  if (normalized.includes("not found") || normalized.includes("user not found")) {
+    return "We couldn’t find an account with that email. Please register or check the address.";
+  }
+
+  if (normalized.includes("forbidden") || normalized.includes("access denied")) {
+    return "Your account is not allowed to sign in right now. Please contact support.";
+  }
+
+  if (normalized.includes("too many")) {
+    return "Too many sign-in attempts. Please wait a moment and try again.";
+  }
+
+  if (normalized.includes("server") || normalized.includes("internal error") || normalized.includes("unexpected")) {
+    return "Something went wrong on our side. Please try again in a moment.";
+  }
+
+  return "We couldn’t sign you in. Please try again.";
+};
 
 function Login() {
   const navigate = useNavigate();
@@ -28,17 +69,33 @@ function Login() {
     event.preventDefault();
     setError("");
     setMessage("");
+
+    const email = formData.email.trim();
+    const password = formData.password;
+
+    if (!email || !password) {
+      setError("Please enter both your email and password.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       await api.auth.login({
-        email: formData.email.trim(),
-        password: formData.password,
+        email,
+        password,
       });
 
-      navigate("/dashboard/organizations", { replace: true });
+      const targetPath = location.state?.from || "/dashboard/organizations";
+      const currentUser = getStoredUser();
+
+      if (currentUser?.role === "SUPER_ADMIN") {
+        navigate("/dashboard/super-admin", { replace: true });
+      } else {
+        navigate(targetPath, { replace: true });
+      }
     } catch (requestError) {
-      setError(requestError.message || "Login failed.");
+      setError(getFriendlyErrorMessage(requestError));
     } finally {
       setLoading(false);
     }

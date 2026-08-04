@@ -76,8 +76,23 @@ public class OrganizationController {
 		return organizationService.getMyOrganizations();
 	}
 	@PostMapping("/generate-link")
-	public ResponseEntity<String> generatePublicLink() {
+	public ResponseEntity<java.util.Map<String, String>> generatePublicLink(@RequestBody(required = false) java.util.Map<String, Object> body) {
+		String token;
+		if (body != null && body.containsKey("organizationId")) {
+			Object raw = body.get("organizationId");
+			Long orgId = null;
+			try {
+				if (raw instanceof Number) orgId = ((Number) raw).longValue();
+				else orgId = Long.parseLong(String.valueOf(raw));
+			} catch (Exception e) {
+				return ResponseEntity.badRequest().body(java.util.Collections.singletonMap("error", "Invalid organizationId"));
+			}
 
-		return ResponseEntity.ok(organizationService.generatePublicLink());
+			token = organizationService.generatePublicLink(orgId);
+		} else {
+			token = organizationService.generatePublicLink();
+		}
+
+		return ResponseEntity.ok(java.util.Collections.singletonMap("token", token));
 	}
 }

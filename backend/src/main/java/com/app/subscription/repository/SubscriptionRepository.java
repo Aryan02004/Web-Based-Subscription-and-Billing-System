@@ -14,4 +14,6 @@ public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity
 	List<SubscriptionEntity> findByOrganizationId(Long organizationId);
 
 	Optional<SubscriptionEntity> findByIdAndOrganizationId(Long id, Long organizationId);
+
+	List<SubscriptionEntity> findByNextBillingDate(java.time.LocalDate nextBillingDate);
 }

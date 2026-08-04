@@ -1,28 +1,27 @@
 import {
   LayoutDashboard,
-  CreditCard,
   Users,
-  Link2,
-  BarChart3,
-  Settings,
   LogOut,
   Bell,
   Search,
+  Sparkles,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { clearAuthSession, getStoredUser } from "../../lib/api/client";
 
-const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/organizations", disabled: true },
-  { label: "Subscription Plans", icon: CreditCard, href: "#", disabled: true },
+const defaultNavItems = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/organizations", activeMatch: "/dashboard/organizations" },
   { label: "Organizations", icon: Users, href: "/dashboard/organizations", activeMatch: "/dashboard/organizations" },
-  { label: "Checkout Links", icon: Link2, href: "#", disabled: true },
-  { label: "Reports", icon: BarChart3, href: "#", disabled: true },
-  { label: "Settings", icon: Settings, href: "#", disabled: true },
 ];
 
-function DashboardLayout({ children, searchQuery, onSearchChange, searchPlaceholder = "Search organizations..." }) {
+function DashboardLayout({
+  children,
+  searchQuery = "",
+  onSearchChange,
+  searchPlaceholder = "Search organizations...",
+  navItems = defaultNavItems,
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getStoredUser();
@@ -41,54 +40,48 @@ function DashboardLayout({ children, searchQuery, onSearchChange, searchPlacehol
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#f8f9ff] text-[#0b1c30]">
-      <aside className="fixed left-0 top-0 z-50 flex h-screen w-65 flex-col border-r border-[#bbcac6] bg-white py-4 shadow-sm">
+    <div className="min-h-screen overflow-hidden bg-[#f8f9ff] text-slate-900">
+      <aside className="fixed left-0 top-0 z-50 flex h-screen w-65 flex-col border-r border-slate-200 bg-white/90 py-4 shadow-sm backdrop-blur-xl">
         <div className="mb-8 px-6">
-          <h1 className="text-xl font-bold text-[#006b5f]">Subscriptor</h1>
-          <p className="text-sm text-[#3c4947]/70">Enterprise SaaS</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-600 text-white shadow-lg shadow-cyan-600/20">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-cyan-700">Subscriptor</h1>
+              <p className="text-xs text-slate-500">India-first billing</p>
+            </div>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-4">
-          {navItems.map(({ label, icon: Icon, href, activeMatch, disabled }) => {
+          {navItems.map(({ label, icon: Icon, href, activeMatch }) => {
             const isActive = activeMatch
               ? location.pathname.startsWith(activeMatch)
               : location.pathname === href;
-
-            if (disabled) {
-              return (
-                <span
-                  key={label}
-                  className="flex cursor-not-allowed items-center rounded-lg px-4 py-3 text-sm text-[#3c4947]/50"
-                  title="Coming soon"
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {label}
-                </span>
-              );
-            }
 
             return (
               <Link
                 key={label}
                 to={href}
-                className={`relative flex items-center rounded-lg px-4 py-3 text-sm transition-colors ${
+                className={`relative flex items-center rounded-xl px-4 py-3 text-sm transition-all ${
                   isActive
-                    ? "bg-[#e5eeff] font-bold text-[#006b5f] before:absolute before:left-0 before:h-2/3 before:w-1 before:rounded-r-full before:bg-[#006b5f]"
-                    : "text-[#3c4947] hover:bg-[#eff4ff]"
+                    ? "bg-cyan-50 font-semibold text-cyan-700 shadow-sm before:absolute before:left-0 before:h-2/3 before:w-1 before:rounded-r-full before:bg-cyan-600"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
-                <Icon className={`mr-3 h-5 w-5 ${isActive ? "text-[#006b5f]" : ""}`} />
+                <Icon className={`mr-3 h-5 w-5 ${isActive ? "text-cyan-600" : ""}`} />
                 {label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto border-t border-[#bbcac6] px-4 pt-4">
+        <div className="mt-auto border-t border-slate-200 px-4 pt-4">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center rounded-lg px-4 py-3 text-sm text-[#3c4947] transition-colors hover:bg-[#ffdad6] hover:text-[#ba1a1a]"
+            className="flex w-full items-center rounded-xl px-4 py-3 text-sm text-slate-600 transition-colors hover:bg-red-50 hover:text-red-600"
           >
             <LogOut className="mr-3 h-5 w-5" />
             Logout
@@ -96,36 +89,36 @@ function DashboardLayout({ children, searchQuery, onSearchChange, searchPlacehol
         </div>
       </aside>
 
-      <header className="fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-theme(spacing.65))] items-center justify-between border-b border-[#bbcac6] bg-[#f8f9ff] px-6">
+      <header className="fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-(--spacing(65)))] items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur-xl">
         <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#3c4947]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => onSearchChange?.(event.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full rounded-lg border border-[#bbcac6] bg-white py-2 pl-10 pr-4 text-sm outline-none transition focus:border-[#006b5f] focus:ring-2 focus:ring-[#006b5f]/10"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
           />
         </div>
 
         <div className="ml-6 flex items-center gap-4">
           <button
             type="button"
-            className="relative rounded-full p-2 transition-colors hover:bg-[#eff4ff]"
+            className="relative rounded-full p-2 transition-colors hover:bg-cyan-50"
             aria-label="Notifications"
           >
-            <Bell className="h-5 w-5 text-[#3c4947]" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-[#f8f9ff] bg-[#ba1a1a]" />
+            <Bell className="h-5 w-5 text-slate-600" />
+            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
           </button>
 
-          <div className="flex items-center gap-3 border-l border-[#bbcac6] pl-4">
+          <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
             <div className="text-right">
-              <p className="text-sm font-medium text-[#0b1c30]">{displayName}</p>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-[#3c4947]">
+              <p className="text-sm font-medium text-slate-900">{displayName}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
                 {roleLabel}
               </p>
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#bbcac6] bg-[#dce9ff] text-xs font-bold text-[#006b5f]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white">
               {displayName.charAt(0).toUpperCase()}
             </div>
           </div>

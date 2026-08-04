@@ -12,33 +12,40 @@ import com.app.subscription.entity.SubscriptionEntity;
 @RequestMapping("/api/subscriptions")
 public class SubscriptionController {
 
-    @Autowired
-    private SubscriptionService service;
+	@Autowired
+	private SubscriptionService service;
 
-    @PostMapping
-    public SubscriptionEntity createSubscription(@RequestBody SubscriptionEntity subscription) {
-        return service.createSubscription(subscription);
-    }
+	@PostMapping
+	public SubscriptionEntity createSubscription(@RequestBody SubscriptionEntity subscription) {
+		return service.createSubscription(subscription);
+	}
 
-    @GetMapping
-    public List<SubscriptionEntity> getAllSubscriptions() {
-        return service.getAllSubscriptions();
-    }
+	@GetMapping
+	public List<SubscriptionEntity> getAllSubscriptions(@RequestParam(required = false) Long organizationId) {
+		return organizationId != null
+				? service.getSubscriptionsByOrganizationId(organizationId)
+				: service.getAllSubscriptions();
+	}
 
-    @GetMapping("/{id}")
-    public SubscriptionEntity getSubscriptionById(@PathVariable Long id) {
-        return service.getSubscriptionById(id);
-    }
+	@GetMapping("/{id}")
+	public SubscriptionEntity getSubscriptionById(@PathVariable Long id) {
+		return service.getSubscriptionById(id);
+	}
 
-    @PutMapping("/{id}")
-    public SubscriptionEntity updateSubscription(@PathVariable Long id,
-                                           @RequestBody SubscriptionEntity subscription) {
-        return service.updateSubscription(id, subscription);
-    }
+	@PutMapping("/{id}")
+	public SubscriptionEntity updateSubscription(@PathVariable Long id, @RequestBody SubscriptionEntity subscription) {
+		return service.updateSubscription(id, subscription);
+	}
 
-    @DeleteMapping("/{id}")
-    public String deleteSubscription(@PathVariable Long id) {
-        service.deleteSubscription(id);
-        return "Subscription Deleted Successfully";
-    }
+	@DeleteMapping("/{id}")
+	public String deleteSubscription(@PathVariable Long id) {
+		service.deleteSubscription(id);
+		return "Subscription Deleted Successfully";
+	}
+
+	@PatchMapping("/{id}/renew")
+	public SubscriptionEntity renewSubscription(@PathVariable Long id) {
+
+		return service.renewSubscription(id);
+	}
 }

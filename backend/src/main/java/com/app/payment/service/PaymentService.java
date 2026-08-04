@@ -17,4 +17,7 @@ public interface PaymentService {
 
 	Payment verifyPayment(Long paymentId, RazorpayVerificationRequest request);
 
+	Payment verifyPaymentPublic(Long paymentId, RazorpayVerificationRequest request, Long organizationId);
+
+	Payment createPayment(Payment payment, Long organizationId);
 }

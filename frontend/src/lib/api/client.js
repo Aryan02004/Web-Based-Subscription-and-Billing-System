@@ -29,6 +29,16 @@ export const getStoredUser = () => {
 
 export const isAuthenticated = () => Boolean(getAccessToken())
 
+const setAuthHeader = () => {
+  const token = getAccessToken()
+
+  if (token) {
+    apiClient.defaults.headers.common.Authorization = `Bearer ${token}`
+  } else {
+    delete apiClient.defaults.headers.common.Authorization
+  }
+}
+
 export const storeAuthSession = ({
   accessToken,
   refreshToken,
@@ -58,15 +68,55 @@ export const storeAuthSession = ({
       }),
     )
   }
+
+  setAuthHeader()
 }
 
 export const clearAuthSession = () => {
   localStorage.removeItem(AUTH_STORAGE_KEYS.accessToken)
   localStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken)
   localStorage.removeItem(AUTH_STORAGE_KEYS.user)
+  setAuthHeader()
 }
 
 const isObject = (value) => value !== null && typeof value === 'object'
+
+const extractErrorMessage = (value, fallback = 'Request failed') => {
+  if (!value) {
+    return fallback
+  }
+
+  if (typeof value === 'string') {
+    return value.trim() || fallback
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nested = extractErrorMessage(item, '')
+      if (nested) {
+        return nested
+      }
+    }
+
+    return fallback
+  }
+
+  if (isObject(value)) {
+    const directMessage = value.message || value.error || value.detail || value.title
+    if (typeof directMessage === 'string' && directMessage.trim()) {
+      return directMessage.trim()
+    }
+
+    for (const nestedValue of Object.values(value)) {
+      const nested = extractErrorMessage(nestedValue, '')
+      if (nested) {
+        return nested
+      }
+    }
+  }
+
+  return fallback
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -75,6 +125,8 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+setAuthHeader()
 
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken()
@@ -91,11 +143,7 @@ apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const responseData = error.response?.data
-    const message =
-      (isObject(responseData) && responseData.message) ||
-      responseData ||
-      error.message ||
-      'Request failed'
+    const message = extractErrorMessage(responseData, error.message || 'Request failed')
 
     return Promise.reject({
       message,

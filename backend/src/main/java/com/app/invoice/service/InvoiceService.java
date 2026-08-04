@@ -6,16 +6,21 @@ import org.springframework.http.ResponseEntity;
 
 import com.app.invoice.entity.InvoiceEntity;
 import com.app.invoice.enums.InvoiceStatus;
+import com.app.subscription.entity.SubscriptionEntity;
 
 public interface InvoiceService {
 
-    InvoiceEntity generateInvoice(InvoiceEntity invoice);
+	InvoiceEntity generateInvoice(InvoiceEntity invoice);
 
-    List<InvoiceEntity> getAllInvoices();
+	InvoiceEntity generateInvoice(SubscriptionEntity subscription);
 
-    InvoiceEntity getInvoiceById(Long id);
+	List<InvoiceEntity> getAllInvoices();
 
-    InvoiceEntity updateInvoiceStatus(Long id, InvoiceStatus status);
+	List<InvoiceEntity> getInvoicesByOrganizationId(Long organizationId);
 
-    ResponseEntity<byte[]> downloadInvoice(Long id);
+	InvoiceEntity getInvoiceById(Long id);
+
+	InvoiceEntity updateInvoiceStatus(Long id, InvoiceStatus status);
+
+	ResponseEntity<byte[]> downloadInvoice(Long id);
 }

@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";import { ChevronRight, Filter, Building2, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronRight, Filter, Building2, CheckCircle2 } from "lucide-react";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import OrganizationCard, {
   OrganizationCardSkeleton,
@@ -134,8 +136,16 @@ function OrgAdminDashboard() {
     await loadOrganizations();
   };
 
+  const navigate = useNavigate();
+
   const handleOpenDashboard = (organization) => {
-    setToast(`${organization.organizationName} workspace will be available after the next sprint.`);
+    const id = organization.organizationId || organization.id;
+    if (!id) {
+      setToast(`${organization.organizationName} workspace will be available after the next sprint.`);
+      return;
+    }
+
+    navigate(`/dashboard/organizations/${id}`);
   };
 
   return (

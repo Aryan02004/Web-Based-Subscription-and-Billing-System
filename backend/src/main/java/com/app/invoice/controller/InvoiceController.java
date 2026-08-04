@@ -25,9 +25,10 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public List<InvoiceEntity> getAllInvoices() {
-
-        return service.getAllInvoices();
+    public List<InvoiceEntity> getAllInvoices(@RequestParam(required = false) Long organizationId) {
+        return organizationId != null
+                ? service.getInvoicesByOrganizationId(organizationId)
+                : service.getAllInvoices();
     }
 
     @GetMapping("/{id}")

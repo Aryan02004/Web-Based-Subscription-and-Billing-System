@@ -19,4 +19,7 @@ public interface SubscriptionPlanRepo extends JpaRepository<SubscriptionPlan, Lo
 
     List<SubscriptionPlan> findByOrganization(Organization organization);
     Optional<SubscriptionPlan> findByIdAndOrganization(Long id, Organization organization);
+    Optional<SubscriptionPlan> findByIdAndOrganizationAndActiveTrue(Long id, Organization organization);
+    
+    List<SubscriptionPlan> findByOrganizationAndActiveTrue(Organization organization);
 }

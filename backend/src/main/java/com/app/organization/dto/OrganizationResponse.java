@@ -1,5 +1,7 @@
 package com.app.organization.dto;
 
+import java.time.LocalDateTime;
+
 import com.app.common.enums.OrganizationStatus;
 
 import lombok.Getter;
@@ -20,6 +22,22 @@ public class OrganizationResponse {
 	private String contactEmail;
 
 	private OrganizationStatus status;
+
+	private LocalDateTime createdAt;
+
+	private String rejectionReason;
+
+	private String publicLinkToken;
+
+	private Boolean linkActive;
+
+	public String getOrganizationName() {
+		return name;
+	}
+
+	public Long getOrganizationId() {
+		return id;
+	}
 
 //	private Long createdBy;
 }

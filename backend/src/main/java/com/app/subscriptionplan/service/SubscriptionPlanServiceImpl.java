@@ -10,6 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.app.auth.entity.User;
 import com.app.auth.repository.UserRepository;
+import com.app.notification.enums.NotificationChannel;
+import com.app.notification.enums.NotificationType;
+import com.app.notification.service.NotificationService;
 import com.app.organization.entity.Organization;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationRepository;
@@ -33,6 +36,9 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 	@Autowired
 	private OrganizationUserRepository organizationUserRepository;
 
+	@Autowired
+	private NotificationService notificationService;
+
 	private Organization getCurrentOrganization() {
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -41,8 +47,10 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
-				.orElseThrow(() -> new RuntimeException("Organization not found"));
+		OrganizationUser organizationUser = organizationUserRepository.findByUserId(user.getId())
+			.stream()
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return organizationUser.getOrganization();
 	}
@@ -79,10 +87,20 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
-				.orElseThrow(() -> new RuntimeException("Organization not found"));
+		OrganizationUser organizationUser = organizationUserRepository.findByUserId(user.getId())
+			.stream()
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return repository.findByOrganization(organizationUser.getOrganization());
+	}
+
+	@Override
+	public List<SubscriptionPlan> getPlansByOrganizationId(Long organizationId) {
+		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
+
+		return repository.findByOrganization(organization);
 	}
 
 	@Override

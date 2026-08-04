@@ -35,4 +35,5 @@ public interface OrganizationService {
 
 	List<MyOrganizationResponse> getMyOrganizations();
 	String generatePublicLink();
+	String generatePublicLink(Long organizationId);
 }

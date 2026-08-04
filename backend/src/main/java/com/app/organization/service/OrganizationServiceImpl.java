@@ -134,6 +134,10 @@ public class OrganizationServiceImpl implements OrganizationService {
 		response.setIndustry(organization.getIndustry());
 		response.setContactEmail(organization.getContactEmail());
 		response.setStatus(organization.getStatus());
+		response.setCreatedAt(organization.getCreatedAt());
+		response.setRejectionReason(organization.getRejectionReason());
+		response.setPublicLinkToken(organization.getPublicLinkToken());
+		response.setLinkActive(organization.getLinkActive());
 
 		return response;
 	}
@@ -163,7 +167,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	@Override
 	public List<OrganizationResponse> getPendingOrganizations() {
-		// TODO Auto-generated method stub
 		return organizationRepository.findByStatus(OrganizationStatus.PENDING).stream().map(this::mapToResponse)
 				.collect(Collectors.toList());
 	}
@@ -171,7 +174,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
 	@Transactional
 	public OrganizationResponse approveOrganization(Long organizationId) {
-		// TODO Auto-generated method stub
 		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
@@ -216,7 +218,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
 	@Transactional
 	public OrganizationResponse rejectOrganization(Long organizationId, RejectOrganizationRequest reason) {
-		// TODO Auto-generated method stub
 		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
@@ -237,7 +238,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
 	@Transactional
 	public OrganizationResponse suspendOrganization(Long organizationId, SuspendOrganizationRequest reason) {
-		// TODO Auto-generated method stub
 		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
@@ -259,7 +259,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
 	@Transactional
 	public void validateOrganizationAccess(Long organizationId, Long userId) {
-		// TODO Auto-generated method stub
 		OrganizationUser organizationUser = organizationUserRepository
 				.findByOrganizationIdAndUserId(organizationId, userId)
 				.orElseThrow(() -> new OrganizationAccessDeniedException("You are not a member of this organization"));
@@ -288,8 +287,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	@Override
 	public List<MyOrganizationResponse> getMyOrganizations() {
-		// TODO Auto-generated method stub
-
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		String email = authentication.getName();
@@ -316,22 +313,22 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	@Override
 	public String generatePublicLink() {
-		// TODO Auto-generated method stub
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		String email = authentication.getName();
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
+		// Find first organization for this user
+		OrganizationUser organizationUser = organizationUserRepository.findByUserId(user.getId())
+				.stream()
+				.findFirst()
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		Organization organization = organizationUser.getOrganization();
 
-		// If already generated, return existing token
 		if (organization.getPublicLinkToken() != null && !organization.getPublicLinkToken().isBlank()) {
-
-			return "http://localhost:8080/public/org/" + organization.getPublicLinkToken();
+			return organization.getPublicLinkToken();
 		}
 
 		String token = UUID.randomUUID().toString();
@@ -341,6 +338,35 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 		organizationRepository.save(organization);
 
-		return "http://localhost:8080/public/org/" + token;
+		return token;
 	}
+
+	@Override
+	public String generatePublicLink(Long organizationId) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		String email = authentication.getName();
+
+		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+		OrganizationUser organizationUser = organizationUserRepository
+				.findByOrganizationIdAndUserId(organizationId, user.getId())
+				.orElseThrow(() -> new RuntimeException("Organization not found"));
+
+		Organization organization = organizationUser.getOrganization();
+
+		if (organization.getPublicLinkToken() != null && !organization.getPublicLinkToken().isBlank()) {
+			return organization.getPublicLinkToken();
+		}
+
+		String token = UUID.randomUUID().toString();
+
+		organization.setPublicLinkToken(token);
+		organization.setLinkActive(true);
+
+		organizationRepository.save(organization);
+
+		return token;
+	}
+
 }

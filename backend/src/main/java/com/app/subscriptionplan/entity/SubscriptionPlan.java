@@ -17,48 +17,48 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 
 @Entity
 @Table(name = "subscription_plans")
 @NoArgsConstructor
+@Getter
+@Setter
 public class SubscriptionPlan extends BaseEntity {
 
-	@Column(name = "plan_name", nullable = false, length = 100)
-	private String planName;
+    @Column(name = "plan_name", nullable = false, length = 100)
+    private String planName;
 
-	@Column(columnDefinition = "TEXT")
-	private String description;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-	@Column(nullable = false, precision = 12, scale = 2)
-	private BigDecimal price;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
-	@Column(name = "max_users")
-	private Integer maxUsers;
+    @Column(name = "max_users")
+    private Integer maxUsers;
 
-	@Column(name = "storage_limit_gb")
-	private Integer storageLimitGb;
+    @Column(name = "storage_limit_gb")
+    private Integer storageLimitGb;
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "features", columnDefinition = "jsonb")
-	private Map<String, Object> features;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "features", columnDefinition = "jsonb")
+    private Map<String, Object> features;
 
-	@Column(nullable = false)
-	private Boolean active = true;
-
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "organization_id", nullable = false)
-	private Organization organization;
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "billing_cycle", nullable = false)
-	private BillingCycle billingCycle;
+    @Column(nullable = false)
+    private Boolean active = true;
+   
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_cycle", nullable = false)
+    private BillingCycle billingCycle;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
 	public String getPlanName() {
 		return planName;
@@ -124,12 +124,9 @@ public class SubscriptionPlan extends BaseEntity {
 		this.billingCycle = billingCycle;
 	}
 
-	public Organization getOrganization() {
-		return organization;
-	}
-
-	public void setOrganization(Organization organization) {
-		this.organization = organization;
+	public void setOrganization(Organization organization2) {
+		this.organization=organization2;
+		
 	}
 	
     

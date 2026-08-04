@@ -8,7 +8,7 @@ import { apiRoutes } from './endpoints'
 
 const createCrudApi = (basePath) => ({
   create: (payload) => apiClient.post(basePath, payload),
-  list: () => apiClient.get(basePath),
+  list: (params) => apiClient.get(basePath, { params }),
   getById: (id) => apiClient.get(`${basePath}/${id}`),
   update: (id, payload) => apiClient.put(`${basePath}/${id}`, payload),
   remove: (id) => apiClient.delete(`${basePath}/${id}`),
@@ -60,8 +60,16 @@ const organizationApi = {
 const superAdminOrganizationApi = {
   getPendingOrganizations: () => apiClient.get(apiRoutes.superAdminOrganizations.pending),
   approve: (organizationId) => apiClient.put(apiRoutes.superAdminOrganizations.approve(organizationId)),
-  reject: (organizationId) => apiClient.put(apiRoutes.superAdminOrganizations.reject(organizationId)),
-  suspend: (organizationId) => apiClient.put(apiRoutes.superAdminOrganizations.suspend(organizationId)),
+  reject: (organizationId, reason) =>
+    apiClient.put(apiRoutes.superAdminOrganizations.reject(organizationId), {
+      organizationId,
+      reason,
+    }),
+  suspend: (organizationId, reason) =>
+    apiClient.put(apiRoutes.superAdminOrganizations.suspend(organizationId), {
+      organizationId,
+      reason,
+    }),
 }
 
 const otpApi = {
@@ -74,6 +82,7 @@ const roleApi = createCrudApi(apiRoutes.roles.base)
 const planApi = createCrudApi(apiRoutes.plans.base)
 const subscriptionApi = createCrudApi(apiRoutes.subscriptions.base)
 const invoiceApi = createCrudApi(apiRoutes.invoices.base)
+const customerApi = createCrudApi(apiRoutes.customers.base)
 const paymentApi = {
   ...createCrudApi(apiRoutes.payments.base),
   createOrder: (paymentId) => apiClient.post(apiRoutes.payments.createOrder(paymentId)),
@@ -81,6 +90,9 @@ const paymentApi = {
 
 const publicApi = {
   getOrganizationPlans: (token) => apiClient.get(apiRoutes.public.organizationPlans(token)),
+  billingPage: (token) => apiClient.get(`/billing/${encodeURIComponent(token)}`),
+  checkout: (token, payload) => apiClient.post(`/billing/${encodeURIComponent(token)}/subscribe`, payload),
+  verifyPayment: (token, paymentId, payload) => apiClient.post(`/billing/${encodeURIComponent(token)}/verify/${paymentId}`, payload),
 }
 
 const testApi = {
@@ -97,6 +109,7 @@ export const api = {
   plan: planApi,
   subscription: subscriptionApi,
   invoice: invoiceApi,
+  customer: customerApi,
   payment: paymentApi,
   public: publicApi,
   test: testApi,

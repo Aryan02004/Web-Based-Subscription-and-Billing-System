@@ -1,5 +1,6 @@
 package com.app.invoice.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +23,9 @@ import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
 import com.app.subscription.entity.SubscriptionEntity;
 import com.app.subscription.repository.SubscriptionRepository;
+import com.app.notification.enums.NotificationChannel;
+import com.app.notification.enums.NotificationType;
+import com.app.notification.service.NotificationService;
 
 @Service
 public class InvoiceServiceImpl implements InvoiceService {
@@ -44,6 +48,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 	@Autowired
 	private SubscriptionRepository subscriptionRepository;
 
+	@Autowired
+	private NotificationService notificationService;
+	
+	@Autowired
+	private InvoiceRepository invoiceRepository;
+
 	private Long getCurrentOrganizationId() {
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -52,8 +62,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
-				.orElseThrow(() -> new RuntimeException("Organization not found"));
+		OrganizationUser organizationUser = organizationUserRepository.findByUserId(user.getId())
+			.stream()
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return organizationUser.getOrganization().getId();
 	}
@@ -69,6 +81,15 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 		invoice.setSubscription(subscription);
 
+		BigDecimal subtotal = subscription.getPlan().getPrice();
+		BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
+		BigDecimal total = subtotal.add(tax);
+
+		invoice.setSubtotal(subtotal);
+		invoice.setTaxAmount(tax);
+		invoice.setTotalAmount(total);
+		invoice.setCurrency("INR");
+
 		invoice.setGeneratedAt(LocalDateTime.now());
 
 		if (invoice.getStatus() == null) {
@@ -78,6 +99,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 		invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
 
 		InvoiceEntity savedInvoice = repository.save(invoice);
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Invoice Generated",
+				"Invoice " + savedInvoice.getInvoiceNumber() + " has been generated successfully.",
+				NotificationType.INVOICE, NotificationChannel.IN_APP);
 
 		// Generate PDF
 		byte[] pdf = pdfGenerator.generateInvoicePdf(savedInvoice);
@@ -87,6 +111,29 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 		return savedInvoice;
 	}
+	
+	@Override
+	public InvoiceEntity generateInvoice(SubscriptionEntity subscription) {
+
+	    InvoiceEntity invoice = new InvoiceEntity();
+
+	    invoice.setSubscription(subscription);
+
+	    BigDecimal subtotal = subscription.getPlan().getPrice();
+	    BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
+	    BigDecimal total = subtotal.add(tax);
+
+	    invoice.setSubtotal(subtotal);
+	    invoice.setTaxAmount(tax);
+	    invoice.setTotalAmount(total);
+	    invoice.setCurrency("INR");
+
+	    invoice.setGeneratedAt(LocalDateTime.now());
+	    invoice.setStatus(InvoiceStatus.PENDING);
+	    invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
+
+	    return invoiceRepository.save(invoice);
+	}
 
 	@Override
 	public List<InvoiceEntity> getAllInvoices() {
@@ -95,22 +142,25 @@ public class InvoiceServiceImpl implements InvoiceService {
 	}
 
 	@Override
-	public InvoiceEntity getInvoiceById(Long id) {
+    public List<InvoiceEntity> getInvoicesByOrganizationId(Long organizationId) {
+        return repository.findBySubscriptionOrganizationId(organizationId);
+    }
 
+    @Override
+	public InvoiceEntity getInvoiceById(Long id) {
 		return repository.findByIdAndSubscriptionOrganizationId(id, getCurrentOrganizationId())
 				.orElseThrow(() -> new RuntimeException("Invoice not found"));
 	}
 
-	@Override
-	public InvoiceEntity updateInvoiceStatus(Long id, InvoiceStatus status) {
+    @Override
+    public InvoiceEntity updateInvoiceStatus(Long id, InvoiceStatus status) {
+        InvoiceEntity invoice = repository.findByIdAndSubscriptionOrganizationId(id, getCurrentOrganizationId())
+                .orElseThrow(() -> new RuntimeException("Invoice not found"));
 
-		InvoiceEntity invoice = repository.findByIdAndSubscriptionOrganizationId(id, getCurrentOrganizationId())
-				.orElseThrow(() -> new RuntimeException("Invoice not found"));
+        invoice.setStatus(status);
 
-		invoice.setStatus(status);
-
-		return repository.save(invoice);
-	}
+        return repository.save(invoice);
+    }
 
 	@Override
 	public ResponseEntity<byte[]> downloadInvoice(Long id) {

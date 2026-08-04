@@ -29,7 +29,6 @@ public class OrganizationUser extends BaseEntity {
 	@ManyToOne
 	@JoinColumn(name = "organization_id", nullable = false)
 	private Organization organization;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;

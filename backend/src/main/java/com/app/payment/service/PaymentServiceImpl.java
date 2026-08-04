@@ -10,11 +10,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.app.auth.entity.User;
 import com.app.auth.repository.UserRepository;
+import com.app.customer.entity.CustomerEntity;
+import com.app.customer.repository.CustomerRepository;
 import com.app.invoice.email.EmailService;
 import com.app.invoice.entity.InvoiceEntity;
 import com.app.invoice.enums.InvoiceStatus;
 import com.app.invoice.pdf.PdfGenerator;
 import com.app.invoice.repository.InvoiceRepository;
+import com.app.notification.enums.NotificationChannel;
+import com.app.notification.enums.NotificationType;
+import com.app.notification.service.NotificationService;
+import com.app.notification.template.PaymentFailedEmailTemplate;
+import com.app.notification.template.PaymentSuccessEmailTemplate;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
 import com.app.payment.entity.Payment;
@@ -52,6 +59,12 @@ public class PaymentServiceImpl implements PaymentService {
 	@Autowired
 	private RazorpayService razorpayService;
 
+	@Autowired
+	private NotificationService notificationService;
+
+	@Autowired
+	private CustomerRepository customerRepository;
+
 	private Long getCurrentOrganizationId() {
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -60,8 +73,10 @@ public class PaymentServiceImpl implements PaymentService {
 
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-		OrganizationUser organizationUser = organizationUserRepository.findById(user.getId())
-				.orElseThrow(() -> new RuntimeException("Organization not found"));
+		OrganizationUser organizationUser = organizationUserRepository.findByUserId(user.getId())
+			.stream()
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return organizationUser.getOrganization().getId();
 	}
@@ -75,6 +90,24 @@ public class PaymentServiceImpl implements PaymentService {
 
 		payment.setInvoice(invoice);
 
+		payment.setAmount(invoice.getTotalAmount());
+
+		payment.setCurrency(invoice.getCurrency());
+
+		payment.setStatus(PaymentStatus.PENDING);
+
+		return paymentRepository.save(payment);
+	}
+
+	@Override
+	public Payment createPayment(Payment payment, Long organizationId) {
+
+		InvoiceEntity invoice = invoiceRepository.findById(payment.getInvoice().getId())
+				.orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+		payment.setInvoice(invoice);
+		payment.setAmount(invoice.getTotalAmount());
+		payment.setCurrency(invoice.getCurrency());
 		payment.setStatus(PaymentStatus.PENDING);
 
 		return paymentRepository.save(payment);
@@ -133,6 +166,14 @@ public class PaymentServiceImpl implements PaymentService {
 
 			paymentRepository.save(payment);
 
+			CustomerEntity customer = customerRepository
+					.findById(payment.getInvoice().getSubscription().getCustomerId())
+					.orElseThrow(() -> new RuntimeException("Customer not found"));
+
+			String html = PaymentFailedEmailTemplate.build(customer, payment.getFailureReason());
+
+			emailService.sendHtmlEmail(customer.getEmail(), "Payment Failed", html);
+
 			throw new RuntimeException("Invalid Razorpay Signature");
 		}
 
@@ -148,15 +189,93 @@ public class PaymentServiceImpl implements PaymentService {
 		SubscriptionEntity subscription = invoice.getSubscription();
 
 		subscription.setStatus("ACTIVE");
-
 		subscriptionRepository.save(subscription);
+
+		CustomerEntity customer = customerRepository.findById(subscription.getCustomerId())
+				.orElseThrow(() -> new RuntimeException("Customer not found"));
+
+		String html = PaymentSuccessEmailTemplate.build(customer, payment.getAmount().toString());
+
+		emailService.sendHtmlEmail(customer.getEmail(), "Payment Successful", html);
+
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Payment Successful",
+				"Payment of ₹" + payment.getAmount() + " received for Invoice #" + invoice.getId(),
+				NotificationType.PAYMENT, NotificationChannel.IN_APP);
+
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Subscription Activated",
+				"Subscription has been activated successfully.", NotificationType.SUBSCRIPTION,
+				NotificationChannel.IN_APP);
 
 		byte[] pdf = pdfGenerator.generateInvoicePdf(invoice);
 		System.out.println("========== SENDING EMAIL ==========");
 		emailService.sendInvoice(invoice, pdf);
 		System.out.println("========== EMAIL SENT ==========");
-	
 
 		return paymentRepository.save(payment);
 	}
+
+	    @Override
+	    public Payment verifyPaymentPublic(Long paymentId, RazorpayVerificationRequest request, Long organizationId) {
+
+		Payment payment = paymentRepository
+			.findByIdAndInvoiceSubscriptionOrganizationId(paymentId, organizationId)
+			.orElseThrow(() -> new RuntimeException("Payment not found"));
+
+		boolean verified = razorpayService.verifyPaymentSignature(request.getRazorpayOrderId(),
+			request.getRazorpayPaymentId(), request.getRazorpaySignature());
+		if (!verified) {
+
+		    payment.setStatus(PaymentStatus.FAILED);
+		    payment.setFailureReason("Invalid Razorpay Signature");
+		    payment.setProcessedAt(LocalDateTime.now());
+
+		    paymentRepository.save(payment);
+
+		    CustomerEntity customer = customerRepository
+			    .findById(payment.getInvoice().getSubscription().getCustomerId())
+			    .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+		    String html = PaymentFailedEmailTemplate.build(customer, payment.getFailureReason());
+
+		    emailService.sendHtmlEmail(customer.getEmail(), "Payment Failed", html);
+
+		    throw new RuntimeException("Invalid Razorpay Signature");
+		}
+
+		payment.setRazorpayOrderId(request.getRazorpayOrderId());
+		payment.setRazorpayPaymentId(request.getRazorpayPaymentId());
+		payment.setStatus(PaymentStatus.SUCCESS);
+		payment.setProcessedAt(LocalDateTime.now());
+
+		InvoiceEntity invoice = payment.getInvoice();
+		invoice.setStatus(InvoiceStatus.PAID);
+		invoiceRepository.save(invoice);
+
+		SubscriptionEntity subscription = invoice.getSubscription();
+
+		subscription.setStatus("ACTIVE");
+		subscriptionRepository.save(subscription);
+
+		CustomerEntity customer = customerRepository.findById(subscription.getCustomerId())
+			.orElseThrow(() -> new RuntimeException("Customer not found"));
+
+		String html = PaymentSuccessEmailTemplate.build(customer, payment.getAmount().toString());
+
+		emailService.sendHtmlEmail(customer.getEmail(), "Payment Successful", html);
+
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Payment Successful",
+			"Payment of ₹" + payment.getAmount() + " received for Invoice #" + invoice.getId(),
+			NotificationType.PAYMENT, NotificationChannel.IN_APP);
+
+		notificationService.createCustomerNotification(subscription.getCustomerId(), "Subscription Activated",
+			"Subscription has been activated successfully.", NotificationType.SUBSCRIPTION,
+			NotificationChannel.IN_APP);
+
+		byte[] pdf = pdfGenerator.generateInvoicePdf(invoice);
+		System.out.println("========== SENDING EMAIL ==========");
+		emailService.sendInvoice(invoice, pdf);
+		System.out.println("========== EMAIL SENT ==========");
+
+		return paymentRepository.save(payment);
+	    }
 }

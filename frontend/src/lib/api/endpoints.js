@@ -42,6 +42,9 @@ export const apiRoutes = {
   invoices: {
     base: '/api/invoices',
   },
+  customers: {
+    base: '/api/customers',
+  },
   payments: {
     base: '/api/payments',
     createOrder: (paymentId) => `/api/payments/${paymentId}/create-order`,

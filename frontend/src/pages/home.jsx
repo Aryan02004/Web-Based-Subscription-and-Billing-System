@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -12,6 +13,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { getStoredUser, isAuthenticated } from "../lib/api/client";
 
 const featureCards = [
   {
@@ -85,6 +87,32 @@ function SectionLabel({ children }) {
 }
 
 function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      const authenticated = isAuthenticated();
+      setIsLoggedIn(authenticated);
+      setUser(authenticated ? getStoredUser() : null);
+    };
+
+    syncAuthState();
+    window.addEventListener("storage", syncAuthState);
+
+    return () => window.removeEventListener("storage", syncAuthState);
+  }, []);
+
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+  const profileLabel = displayName || user?.email || "User";
+  const profileInitials = profileLabel
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U";
+  const dashboardPath = user?.role === "SUPER_ADMIN" ? "/dashboard/super-admin" : "/dashboard/organizations";
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-slate-900">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
@@ -100,17 +128,42 @@ function Home() {
           </div>
 
           <div className="hidden items-center gap-3 sm:flex">
-            <Link className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" to="/login">
-              Login
-            </Link>
-            <Link className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:translate-y-[-1px] hover:bg-slate-800" to="/register">
-              Register
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50"
+                to={dashboardPath}
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white">
+                  {profileInitials}
+                </span>
+                <span className="max-w-[10rem] truncate">{profileLabel}</span>
+              </Link>
+            ) : (
+              <>
+                <Link className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" to="/login">
+                  Login
+                </Link>
+                <Link className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:translate-y-[-1px] hover:bg-slate-800" to="/register">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
 
-          <button className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 sm:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2 sm:hidden">
+            {isLoggedIn ? (
+              <Link
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white shadow-sm"
+                to={dashboardPath}
+                aria-label="Open profile"
+              >
+                {profileInitials}
+              </Link>
+            ) : null}
+            <button className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50">
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </header>
 

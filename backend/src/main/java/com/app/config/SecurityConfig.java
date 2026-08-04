@@ -28,6 +28,7 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
+	@SuppressWarnings("unused")
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -42,12 +43,12 @@ public class SecurityConfig {
 
 				.authorizeHttpRequests(auth -> auth
 
-						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/otp/**", "/public/**", "/api/test/hello")
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/otp/**", "/public/**", "/billing/**", "/api/test/hello")
 						.permitAll()
 
 						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/test-payment.html").permitAll()
 
-						.requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
+						.requestMatchers("/api/super-admin/**").hasRole("SUPER_ADMIN")
 
 						.anyRequest().authenticated())
 

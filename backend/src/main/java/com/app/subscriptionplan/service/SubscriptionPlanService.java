@@ -17,5 +17,7 @@ public interface SubscriptionPlanService {
 
     void deletePlan(Long id);
 
+    List<SubscriptionPlan> getPlansByOrganizationId(Long organizationId);
+
 }
 

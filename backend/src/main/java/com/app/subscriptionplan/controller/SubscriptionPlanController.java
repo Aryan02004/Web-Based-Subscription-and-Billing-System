@@ -21,8 +21,10 @@ public class SubscriptionPlanController {
     }
 
     @GetMapping
-    public List<SubscriptionPlan> getAllPlans() {
-        return service.getAllPlans();
+    public List<SubscriptionPlan> getAllPlans(@RequestParam(required = false) Long organizationId) {
+        return organizationId != null
+                ? service.getPlansByOrganizationId(organizationId)
+                : service.getAllPlans();
     }
 
     @GetMapping("/{id}")

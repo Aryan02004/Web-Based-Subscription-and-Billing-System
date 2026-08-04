@@ -1,17 +1,13 @@
 package com.app.invoice.email;
 
 import java.io.ByteArrayInputStream;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
-import com.app.auth.entity.User;
-import com.app.auth.repository.UserRepository;
+import com.app.customer.repository.CustomerRepository;
 import com.app.invoice.entity.InvoiceEntity;
-
 import jakarta.mail.internet.MimeMessage;
 
 @Service
@@ -21,7 +17,7 @@ public class EmailService {
 	private JavaMailSender mailSender;
 
 	@Autowired
-	private UserRepository userRepository;
+	private CustomerRepository customerRepository;
 
 	public void sendInvoice(InvoiceEntity invoice, byte[] pdf) {
 
@@ -35,10 +31,10 @@ public class EmailService {
 			// TODO: Replace with actual customer email
 			Long customerId = invoice.getSubscription().getCustomerId();
 
-			User customer = userRepository.findById(customerId)
+			var customer = customerRepository.findById(customerId)
 					.orElseThrow(() -> new RuntimeException("Customer not found"));
 
-			helper.setTo("laddhasanket705@gmail.com");
+			helper.setTo(customer.getEmail());
 
 			helper.setSubject("Invoice " + invoice.getInvoiceNumber());
 
@@ -58,5 +54,46 @@ public class EmailService {
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to send email", e);
 		}
+	}
+
+	public void sendSimpleEmail(String to, String subject, String body) {
+
+		try {
+
+			MimeMessage message = mailSender.createMimeMessage();
+
+			MimeMessageHelper helper = new MimeMessageHelper(message, false);
+
+			helper.setFrom("subscriptorr@gmail.com");
+			helper.setTo(to);
+			helper.setSubject(subject);
+			helper.setText(body);
+
+			mailSender.send(message);
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to send email", e);
+		}
+	}
+	
+	public void sendHtmlEmail(String to, String subject, String htmlBody) {
+
+	    try {
+
+	        MimeMessage message = mailSender.createMimeMessage();
+
+	        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+	        helper.setFrom("subscriptorr@gmail.com");
+	        helper.setTo(to);
+	        helper.setSubject(subject);
+
+	        helper.setText(htmlBody, true);
+
+	        mailSender.send(message);
+
+	    } catch (Exception e) {
+	        throw new RuntimeException("Failed to send HTML email", e);
+	    }
 	}
 }
