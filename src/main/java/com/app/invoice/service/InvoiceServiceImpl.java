@@ -50,9 +50,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 	@Autowired
 	private NotificationService notificationService;
-	
-	@Autowired
-	private InvoiceRepository invoiceRepository;
 
 	private Long getCurrentOrganizationId() {
 
@@ -87,8 +84,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 		invoice.setTaxAmount(tax);
 		invoice.setTotalAmount(total);
 		invoice.setCurrency("INR");
-
-		invoice.setGeneratedAt(LocalDateTime.now());
+         invoice.setGeneratedAt(LocalDateTime.now());
+//		invoice.setPaidAt(LocalDateTime.now());
 
 		if (invoice.getStatus() == null) {
 			invoice.setStatus(InvoiceStatus.PENDING);
@@ -102,35 +99,38 @@ public class InvoiceServiceImpl implements InvoiceService {
 				NotificationType.INVOICE, NotificationChannel.IN_APP);
 
 		// Generate PDF
-		byte[] pdf = pdfGenerator.generateInvoicePdf(savedInvoice);
+//		byte[] pdf = pdfGenerator.generateInvoicePdf(savedInvoice);
 
 		// Email will be sent here in next step
 		// emailService.sendInvoice(savedInvoice, pdf);
 
 		return savedInvoice;
 	}
-	
+
 	@Override
 	public InvoiceEntity generateInvoice(SubscriptionEntity subscription) {
 
-	    InvoiceEntity invoice = new InvoiceEntity();
+		InvoiceEntity invoice = new InvoiceEntity();
 
-	    invoice.setSubscription(subscription);
+		invoice.setSubscription(subscription);
 
-	    BigDecimal subtotal = subscription.getPlan().getPrice();
-	    BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
-	    BigDecimal total = subtotal.add(tax);
+		BigDecimal subtotal = subscription.getPlan().getPrice();
+		BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
+		BigDecimal total = subtotal.add(tax);
 
-	    invoice.setSubtotal(subtotal);
-	    invoice.setTaxAmount(tax);
-	    invoice.setTotalAmount(total);
-	    invoice.setCurrency("INR");
+		invoice.setSubtotal(subtotal);
+		invoice.setTaxAmount(tax);
+		invoice.setTotalAmount(total);
+		invoice.setCurrency("INR");
 
-	    invoice.setGeneratedAt(LocalDateTime.now());
-	    invoice.setStatus(InvoiceStatus.PENDING);
-	    invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
+		invoice.setInvoiceDate(java.time.LocalDate.now());
 
-	    return invoiceRepository.save(invoice);
+		invoice.setDueDate(java.time.LocalDate.now().plusDays(7));
+		invoice.setGeneratedAt(LocalDateTime.now());
+		invoice.setStatus(InvoiceStatus.PENDING);
+		invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
+
+		return repository.save(invoice);
 	}
 
 	@Override

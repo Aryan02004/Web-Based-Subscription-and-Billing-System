@@ -7,65 +7,84 @@ public class PaymentSuccessEmailTemplate {
 	private PaymentSuccessEmailTemplate() {
 	}
 
-	public static String build(CustomerEntity customer, String amount) {
+	public static String build(CustomerEntity customer, String organizationName, String planName, String amount) {
 
 		return """
-				<!DOCTYPE html>
-				<html>
-				<head>
-				    <meta charset="UTF-8">
-				</head>
+								<!DOCTYPE html>
+								<html>
+								<head>
+								<meta charset="UTF-8">
+								</head>
 
-				<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+								<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 
-				<table width="100%%" cellpadding="0" cellspacing="0" style="padding:40px;">
-				    <tr>
-				        <td align="center">
+								<table width="100%%" cellpadding="0" cellspacing="0" style="padding:40px;">
+								<tr>
+								<td align="center">
 
-				            <table width="600" cellpadding="0" cellspacing="0"
-				                   style="background:#ffffff;border-radius:10px;padding:40px;">
+								<table width="600" cellpadding="20" cellspacing="0"
+								style="background:#ffffff;border-radius:10px;">
 
-				                <tr>
-				                    <td align="center">
-				                        <h2 style="color:#16a34a;">
-				                            Payment Successful
-				                        </h2>
-				                    </td>
-				                </tr>
+								<tr>
+								<td align="center">
 
-				                <tr>
-				                    <td>
+								<h2 style="color:#16a34a;">
+				                Your Subscription is Active
+				                </h2>
 
-				                        <p>Hello <strong>%s</strong>,</p>
+								</td>
+								</tr>
 
-				                        <p>
-				                            We have successfully received your payment of
-				                            <strong>₹%s</strong>.
-				                        </p>
+								<tr>
+								<td>
 
-				                        <p>
-				                            Your subscription is now active and you can continue
-				                            using the service without interruption.
-				                        </p>
+								<p>Hi <strong>%s</strong>,</p>
 
-				                        <hr>
+								<p>
+								Thank you for your payment.
+								</p>
 
-				                        <p style="font-size:13px;color:#888;">
-				                            Regards,<br>
-				                            <strong>Subscriptor Team</strong>
-				                        </p>
+								<p>
+								Your payment of <strong>₹%s</strong> has been received successfully.
+								</p>
 
-				                    </td>
-				                </tr>
+								<p>
+								<b>Organization:</b> %s<br>
+								<b>Plan:</b> %s
+								</p>
 
-				            </table>
+								<p>
+								Your subscription has been activated successfully.
+								</p>
 
-				        </td>
-				    </tr>
-				</table>
+								<p>
+								Your invoice has been attached with a separate email for your reference.
+								</p>
 
-				</body>
-				</html>
-				""".formatted(customer.getFirstName(), amount);
+								<hr>
+
+								<p style="font-size:13px;color:#666;">
+
+								Regards,<br>
+
+								<strong>%s</strong><br><br>
+
+								Powered by <strong>Subscriptor</strong>
+
+								</p>
+
+								</td>
+								</tr>
+
+								</table>
+
+								</td>
+								</tr>
+								</table>
+
+								</body>
+								</html>
+								""".formatted(customer.getFirstName(), amount, organizationName, planName,
+				organizationName);
 	}
 }

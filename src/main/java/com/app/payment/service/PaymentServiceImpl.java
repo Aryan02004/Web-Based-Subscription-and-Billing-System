@@ -23,6 +23,7 @@ import com.app.notification.service.NotificationService;
 import com.app.notification.template.PaymentFailedEmailTemplate;
 import com.app.notification.template.PaymentSuccessEmailTemplate;
 import com.app.organization.entity.OrganizationUser;
+import com.app.organization.repository.OrganizationRepository;
 import com.app.organization.repository.OrganizationUserRepository;
 import com.app.payment.entity.Payment;
 import com.app.payment.enums.PaymentStatus.PaymentStatus;
@@ -46,6 +47,9 @@ public class PaymentServiceImpl implements PaymentService {
 
 	@Autowired
 	private OrganizationUserRepository organizationUserRepository;
+
+	@Autowired
+	private OrganizationRepository organizationRepository;
 
 	@Autowired
 	private SubscriptionRepository subscriptionRepository;
@@ -150,8 +154,11 @@ public class PaymentServiceImpl implements PaymentService {
 	@Override
 	public Payment verifyPayment(Long paymentId, RazorpayVerificationRequest request) {
 
-		Payment payment = paymentRepository
-				.findByIdAndInvoiceSubscriptionOrganizationId(paymentId, getCurrentOrganizationId())
+//		Payment payment = paymentRepository
+//				.findByIdAndInvoiceSubscriptionOrganizationId(paymentId, getCurrentOrganizationId())
+//				.orElseThrow(() -> new RuntimeException("Payment not found"));
+
+		Payment payment = paymentRepository.findById(paymentId)
 				.orElseThrow(() -> new RuntimeException("Payment not found"));
 
 		boolean verified = razorpayService.verifyPaymentSignature(request.getRazorpayOrderId(),
@@ -192,9 +199,15 @@ public class PaymentServiceImpl implements PaymentService {
 		CustomerEntity customer = customerRepository.findById(subscription.getCustomerId())
 				.orElseThrow(() -> new RuntimeException("Customer not found"));
 
-		String html = PaymentSuccessEmailTemplate.build(customer, payment.getAmount().toString());
+		String organizationName = organizationRepository.findById(subscription.getOrganizationId())
+				.orElseThrow(() -> new RuntimeException("Organization not found")).getName();
 
-		emailService.sendHtmlEmail(customer.getEmail(), "Payment Successful", html);
+		String planName = subscription.getPlan().getPlanName();
+
+		String html = PaymentSuccessEmailTemplate.build(customer, organizationName, planName,
+				payment.getAmount().toString());
+
+		emailService.sendHtmlEmail(customer.getEmail(), organizationName + " - Payment Successful", html);
 
 		notificationService.createCustomerNotification(subscription.getCustomerId(), "Payment Successful",
 				"Payment of ₹" + payment.getAmount() + " received for Invoice #" + invoice.getId(),

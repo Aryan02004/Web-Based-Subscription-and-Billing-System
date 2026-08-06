@@ -17,6 +17,7 @@ import com.app.notification.enums.NotificationType;
 import com.app.notification.service.NotificationService;
 import com.app.notification.template.WelcomeEmailTemplate;
 import com.app.organization.entity.OrganizationUser;
+import com.app.organization.repository.OrganizationRepository;
 import com.app.organization.repository.OrganizationUserRepository;
 
 @Service
@@ -30,6 +31,9 @@ public class CustomerServiceImpl implements CustomerService {
 
 	@Autowired
 	private OrganizationUserRepository organizationUserRepository;
+
+	@Autowired
+	private OrganizationRepository organizationRepository;
 
 	@Autowired
 	private NotificationService notificationService;
@@ -57,9 +61,13 @@ public class CustomerServiceImpl implements CustomerService {
 		customer.setOrganizationId(getCurrentOrganizationId());
 
 		CustomerEntity savedCustomer = repository.save(customer);
-		String html = WelcomeEmailTemplate.build(savedCustomer);
 
-		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to Subscriptor", html);
+		String organizationName = organizationRepository.findById(getCurrentOrganizationId())
+				.orElseThrow(() -> new RuntimeException("Organization not found")).getName();
+
+		String html = WelcomeEmailTemplate.build(savedCustomer, organizationName);
+
+		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to " + organizationName, html);
 
 		notificationService.createCustomerNotification(savedCustomer.getId(), "Customer Added",
 				savedCustomer.getFirstName() + " " + savedCustomer.getLastName() + " has been added successfully.",
@@ -71,13 +79,23 @@ public class CustomerServiceImpl implements CustomerService {
 	@Override
 	public CustomerEntity createCustomer(CustomerEntity customer, Long organizationId) {
 
+		CustomerEntity existing = repository.findByOrganizationIdAndEmail(organizationId, customer.getEmail())
+				.orElse(null);
+
+		if (existing != null) {
+			return existing;
+		}
+
 		customer.setOrganizationId(organizationId);
 
 		CustomerEntity savedCustomer = repository.save(customer);
 
-		String html = WelcomeEmailTemplate.build(savedCustomer);
+		String organizationName = organizationRepository.findById(organizationId)
+				.orElseThrow(() -> new RuntimeException("Organization not found")).getName();
 
-		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to Subscriptor", html);
+		String html = WelcomeEmailTemplate.build(savedCustomer, organizationName);
+
+		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to " + organizationName, html);
 
 		notificationService.createCustomerNotification(savedCustomer.getId(), "Customer Added",
 				savedCustomer.getFirstName() + " " + savedCustomer.getLastName() + " has been added successfully.",

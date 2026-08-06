@@ -7,64 +7,78 @@ public class WelcomeEmailTemplate {
 	private WelcomeEmailTemplate() {
 	}
 
-	public static String build(CustomerEntity customer) {
+	public static String build(CustomerEntity customer, String organizationName) {
 
 		return """
 				<!DOCTYPE html>
 				<html>
 				<head>
-				    <meta charset="UTF-8">
+				<meta charset="UTF-8">
 				</head>
 
 				<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 
 				<table width="100%%" cellpadding="0" cellspacing="0" style="padding:40px;">
-				    <tr>
-				        <td align="center">
+				<tr>
+				<td align="center">
 
-				            <table width="600" cellpadding="0" cellspacing="0"
-				                   style="background:#ffffff;border-radius:10px;padding:40px;">
+				<table width="600" cellpadding="20" cellspacing="0"
+				style="background:#ffffff;border-radius:10px;">
 
-				                <tr>
-				                    <td align="center">
-				                        <h2 style="color:#2563eb;">
-				                            Welcome to Subscriptor
-				                        </h2>
-				                    </td>
-				                </tr>
+				<tr>
+				<td align="center">
 
-				                <tr>
-				                    <td>
+				<h2 style="color:#2563eb;">
+				Welcome to %s
+				</h2>
 
-				                        <p>Hello <strong>%s</strong>,</p>
+				</td>
+				</tr>
 
-				                        <p>
-				                            Welcome! Your account has been created successfully.
-				                        </p>
+				<tr>
+				<td>
 
-				                        <p>
-				                            We are excited to have you with us and look forward
-				                            to helping you manage your subscriptions with ease.
-				                        </p>
+				<p>Hi <strong>%s</strong>,</p>
 
-				                        <hr>
+				<p>
+				Thank you for choosing <strong>%s</strong>.
+				</p>
 
-				                        <p style="font-size:13px;color:#888;">
-				                            Regards,<br>
-				                            <strong>Subscriptor Team</strong>
-				                        </p>
+				<p>
+				Your details have been successfully registered.
+				</p>
 
-				                    </td>
-				                </tr>
+				<p>
+				Complete your payment to activate your subscription and start enjoying our services.
+				</p>
 
-				            </table>
+				<p>
+				We're excited to have you on board.
+				</p>
 
-				        </td>
-				    </tr>
+				<hr>
+
+				<p style="font-size:13px;color:#666;">
+
+				Regards,<br>
+
+				<strong>%s</strong><br><br>
+
+				Powered by <strong>Subscriptor</strong>
+
+				</p>
+
+				</td>
+				</tr>
+
+				</table>
+
+				</td>
+				</tr>
 				</table>
 
 				</body>
 				</html>
-				""".formatted(customer.getFirstName());
+				""".formatted(organizationName, customer.getFirstName(), organizationName, organizationName);
 	}
 }
