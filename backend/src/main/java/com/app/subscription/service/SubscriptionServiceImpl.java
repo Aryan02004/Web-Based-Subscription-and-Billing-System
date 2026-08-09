@@ -19,6 +19,7 @@ import com.app.notification.service.NotificationService;
 import com.app.notification.template.RenewalConfirmationEmailTemplate;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
+import com.app.organization.service.OrganizationService;
 import com.app.subscription.entity.SubscriptionEntity;
 import com.app.subscription.repository.SubscriptionRepository;
 
@@ -43,6 +44,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 	@Autowired
 	private NotificationService notificationService;
 
+	@Autowired
+	private OrganizationService organizationService;
+
 	private Long getCurrentOrganizationId() {
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -57,6 +61,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return organizationUser.getOrganization().getId();
+	}
+
+	/**
+	 * Returns the ID of the currently logged-in user.
+	 */
+	private Long getCurrentUserId() {
+		String email = SecurityContextHolder.getContext().getAuthentication().getName();
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+		return user.getId();
 	}
 
 	@Override
@@ -93,6 +107,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public List<SubscriptionEntity> getSubscriptionsByOrganizationId(Long organizationId) {
+        // Validate that the current user has access to this organization
+        organizationService.validateOrganizationAccess(organizationId, getCurrentUserId());
         return repository.findByOrganizationId(organizationId);
     }
 

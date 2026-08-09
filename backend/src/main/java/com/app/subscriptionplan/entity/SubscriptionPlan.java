@@ -1,7 +1,7 @@
 package com.app.subscriptionplan.entity;
 
 import java.math.BigDecimal;
-import java.util.Map;
+import java.util.List;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -47,7 +47,7 @@ public class SubscriptionPlan extends BaseEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "features", columnDefinition = "jsonb")
-    private Map<String, Object> features;
+    private List<String> features;
 
     @Column(nullable = false)
     private Boolean active = true;
@@ -100,11 +100,11 @@ public class SubscriptionPlan extends BaseEntity {
 		this.storageLimitGb = storageLimitGb;
 	}
 
-	public Map<String, Object> getFeatures() {
+	public List<String> getFeatures() {
 		return features;
 	}
 
-	public void setFeatures(Map<String, Object> features) {
+	public void setFeatures(List<String> features) {
 		this.features = features;
 	}
 

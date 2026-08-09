@@ -17,7 +17,9 @@ import com.app.notification.enums.NotificationType;
 import com.app.notification.service.NotificationService;
 import com.app.notification.template.WelcomeEmailTemplate;
 import com.app.organization.entity.OrganizationUser;
+import com.app.organization.repository.OrganizationRepository;
 import com.app.organization.repository.OrganizationUserRepository;
+import com.app.organization.service.OrganizationService;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
@@ -32,10 +34,16 @@ public class CustomerServiceImpl implements CustomerService {
 	private OrganizationUserRepository organizationUserRepository;
 
 	@Autowired
+	private OrganizationRepository organizationRepository;
+
+	@Autowired
 	private NotificationService notificationService;
 
 	@Autowired
 	private EmailService emailService;
+
+	@Autowired
+	private OrganizationService organizationService;
 
 	private Long getCurrentOrganizationId() {
 
@@ -53,15 +61,29 @@ public class CustomerServiceImpl implements CustomerService {
 		return organizationUser.getOrganization().getId();
 	}
 
+	/**
+	 * Returns the ID of the currently logged-in user.
+	 */
+	private Long getCurrentUserId() {
+		String email = SecurityContextHolder.getContext().getAuthentication().getName();
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+		return user.getId();
+	}
+
 	@Override
 	public CustomerEntity createCustomer(CustomerEntity customer) {
 
 		customer.setOrganizationId(getCurrentOrganizationId());
 
 		CustomerEntity savedCustomer = repository.save(customer);
-		String html = WelcomeEmailTemplate.build(savedCustomer);
 
-		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to Subscriptor", html);
+		String organizationName = organizationRepository.findById(getCurrentOrganizationId())
+				.orElseThrow(() -> new RuntimeException("Organization not found")).getName();
+
+		String html = WelcomeEmailTemplate.build(savedCustomer, organizationName);
+
+		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to " + organizationName, html);
 
 		notificationService.createCustomerNotification(savedCustomer.getId(), "Customer Added",
 				savedCustomer.getFirstName() + " " + savedCustomer.getLastName() + " has been added successfully.",
@@ -73,13 +95,23 @@ public class CustomerServiceImpl implements CustomerService {
 	@Override
 	public CustomerEntity createCustomer(CustomerEntity customer, Long organizationId) {
 
+		CustomerEntity existing = repository.findByOrganizationIdAndEmail(organizationId, customer.getEmail())
+				.orElse(null);
+
+		if (existing != null) {
+			return existing;
+		}
+
 		customer.setOrganizationId(organizationId);
 
 		CustomerEntity savedCustomer = repository.save(customer);
 
-		String html = WelcomeEmailTemplate.build(savedCustomer);
+		String organizationName = organizationRepository.findById(organizationId)
+				.orElseThrow(() -> new RuntimeException("Organization not found")).getName();
 
-		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to Subscriptor", html);
+		String html = WelcomeEmailTemplate.build(savedCustomer, organizationName);
+
+		emailService.sendHtmlEmail(savedCustomer.getEmail(), "Welcome to " + organizationName, html);
 
 		notificationService.createCustomerNotification(savedCustomer.getId(), "Customer Added",
 				savedCustomer.getFirstName() + " " + savedCustomer.getLastName() + " has been added successfully.",
@@ -102,10 +134,12 @@ public class CustomerServiceImpl implements CustomerService {
 
 	@Override
     public List<CustomerEntity> getCustomersByOrganizationId(Long organizationId) {
+        // Validate that the current user has access to this organization
+        organizationService.validateOrganizationAccess(organizationId, getCurrentUserId());
         return repository.findByOrganizationId(organizationId);
     }
 
-    @Override
+	@Override
 	public CustomerEntity updateCustomer(Long id, CustomerEntity customer) {
 
 		CustomerEntity existingCustomer = repository.findByIdAndOrganizationId(id, getCurrentOrganizationId())

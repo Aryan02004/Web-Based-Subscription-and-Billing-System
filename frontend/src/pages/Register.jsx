@@ -191,7 +191,7 @@ function Register() {
               Create your Subscriptor account
             </h1>
             <p className="text-base leading-8 text-slate-200">
-              Set up your billing workspace for India-first subscriptions with
+              Set up your billing workspace for subscriptions with
               clean onboarding, secure account creation, and a backend-backed
               signup flow.
             </p>
@@ -232,7 +232,7 @@ function Register() {
                   Create account
                 </p>
                 <h2 className="text-3xl font-black tracking-tight text-slate-950">
-                  Register your business
+                  Register 
                 </h2>
                 <p className="text-sm leading-7 text-slate-600">
                   Fill in your details to start working with the backend

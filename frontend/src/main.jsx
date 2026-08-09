@@ -9,6 +9,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import OrgAdminDashboard from "./pages/OrgAdminDashboard";
 import SuperAdmin from "./pages/SuperAdmin";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import OrganizationProtectedRoute from "./components/auth/OrganizationProtectedRoute";
 import OrganizationDashboard from "./pages/OrganizationDashboard";
 import PublicCheckout from "./pages/PublicCheckout";
 import PaymentSuccess from "./pages/PaymentSuccess";
@@ -34,7 +35,9 @@ createRoot(document.getElementById("root")).render(
           path="/dashboard/organizations/:organizationId"
           element={
             <ProtectedRoute>
-              <OrganizationDashboard />
+              <OrganizationProtectedRoute>
+                <OrganizationDashboard />
+              </OrganizationProtectedRoute>
             </ProtectedRoute>
           }
         />

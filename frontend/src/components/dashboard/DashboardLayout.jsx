@@ -1,6 +1,5 @@
 import {
   LayoutDashboard,
-  Users,
   LogOut,
   Bell,
   Search,
@@ -12,7 +11,6 @@ import { clearAuthSession, getStoredUser } from "../../lib/api/client";
 
 const defaultNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/organizations", activeMatch: "/dashboard/organizations" },
-  { label: "Organizations", icon: Users, href: "/dashboard/organizations", activeMatch: "/dashboard/organizations" },
 ];
 
 function DashboardLayout({
@@ -49,7 +47,7 @@ function DashboardLayout({
             </div>
             <div>
               <h1 className="text-lg font-bold text-cyan-700">Subscriptor</h1>
-              <p className="text-xs text-slate-500">India-first billing</p>
+              <p className="text-xs text-slate-500">India billing</p>
             </div>
           </div>
         </div>
@@ -102,14 +100,7 @@ function DashboardLayout({
         </div>
 
         <div className="ml-6 flex items-center gap-4">
-          <button
-            type="button"
-            className="relative rounded-full p-2 transition-colors hover:bg-cyan-50"
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5 text-slate-600" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
-          </button>
+
 
           <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
             <div className="text-right">

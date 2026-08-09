@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, Globe2, Lock, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Globe2,
+  Lock,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { api } from "../lib/api";
 import { getStoredUser } from "../lib/api/client";
 
@@ -13,23 +22,42 @@ const getFriendlyErrorMessage = (error) => {
     return "We couldn’t sign you in. Please try again.";
   }
 
-  if (normalized.includes("network") || normalized.includes("failed to fetch") || normalized.includes("timeout") || normalized.includes("load failed")) {
+  if (
+    normalized.includes("network") ||
+    normalized.includes("failed to fetch") ||
+    normalized.includes("timeout") ||
+    normalized.includes("load failed")
+  ) {
     return "We couldn’t reach the server. Please check your connection and try again.";
   }
 
-  if (normalized.includes("verify your email") || normalized.includes("email verified")) {
+  if (
+    normalized.includes("verify your email") ||
+    normalized.includes("email verified")
+  ) {
     return "Please verify your email address before signing in.";
   }
 
-  if (normalized.includes("invalid email or password") || normalized.includes("bad credentials") || normalized.includes("unauthorized") || normalized.includes("authentication failed")) {
+  if (
+    normalized.includes("invalid email or password") ||
+    normalized.includes("bad credentials") ||
+    normalized.includes("unauthorized") ||
+    normalized.includes("authentication failed")
+  ) {
     return "The email or password you entered is incorrect. Please try again.";
   }
 
-  if (normalized.includes("not found") || normalized.includes("user not found")) {
+  if (
+    normalized.includes("not found") ||
+    normalized.includes("user not found")
+  ) {
     return "We couldn’t find an account with that email. Please register or check the address.";
   }
 
-  if (normalized.includes("forbidden") || normalized.includes("access denied")) {
+  if (
+    normalized.includes("forbidden") ||
+    normalized.includes("access denied")
+  ) {
     return "Your account is not allowed to sign in right now. Please contact support.";
   }
 
@@ -37,7 +65,11 @@ const getFriendlyErrorMessage = (error) => {
     return "Too many sign-in attempts. Please wait a moment and try again.";
   }
 
-  if (normalized.includes("server") || normalized.includes("internal error") || normalized.includes("unexpected")) {
+  if (
+    normalized.includes("server") ||
+    normalized.includes("internal error") ||
+    normalized.includes("unexpected")
+  ) {
     return "Something went wrong on our side. Please try again in a moment.";
   }
 
@@ -112,15 +144,24 @@ function Login() {
               <Sparkles className="h-4 w-4 text-cyan-300" />
               Secure backend login
             </div>
-            <h1 className="text-5xl font-black tracking-tight">Welcome back to Subscriptor</h1>
+            <h1 className="text-5xl font-black tracking-tight">
+              Welcome back to Subscriptor
+            </h1>
             <p className="text-base leading-8 text-slate-200">
-              Log in to manage subscriptions, invoices, and revenue workflows for Indian customers.
+              Log in to manage subscriptions, invoices, and revenue workflows
+              for Indian customers.
             </p>
           </div>
 
           <div className="relative z-10 grid gap-4 sm:grid-cols-2">
-            <MetricCard title="UPI ready" description="Fast payment journeys for Indian users." />
-            <MetricCard title="RBI aware" description="Recurring billing handled with secure sessions." />
+            <MetricCard
+              title="UPI ready"
+              description="Fast payment journeys for Indian users."
+            />
+            <MetricCard
+              title="RBI aware"
+              description="Recurring billing handled with secure sessions."
+            />
             <div className="sm:col-span-2 rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400 text-slate-950">
@@ -128,7 +169,9 @@ function Login() {
                 </div>
                 <div>
                   <p className="text-sm text-cyan-100">Protected access</p>
-                  <p className="text-lg font-bold">JWT session stored after login</p>
+                  <p className="text-lg font-bold">
+                    JWT session stored after login
+                  </p>
                 </div>
               </div>
             </div>
@@ -139,19 +182,44 @@ function Login() {
           <div className="w-full max-w-140">
             <div className="rounded-4xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/50 sm:p-8">
               <div className="mb-8 space-y-2">
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-700">Login</p>
-                <h2 className="text-3xl font-black tracking-tight text-slate-950">Access your account</h2>
-                <p className="text-sm leading-7 text-slate-600">Sign in using the backend login endpoint.</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                  Login
+                </p>
+                <h2 className="text-3xl font-black tracking-tight text-slate-950">
+                  Access your account
+                </h2>
+                <p className="text-sm leading-7 text-slate-600">
+                  Sign in using the backend login endpoint.
+                </p>
               </div>
 
-              {message ? <p className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</p> : null}
-              {error ? <p className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
+              {message ? (
+                <p className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {message}
+                </p>
+              ) : null}
+              {error ? (
+                <p className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </p>
+              ) : null}
 
               <form className="space-y-5" onSubmit={handleSubmit}>
-                <Field label="Email address" icon={Mail} name="email" value={formData.email} onChange={handleChange} placeholder="name@company.com" type="email" required />
+                <Field
+                  label="Email address"
+                  icon={Mail}
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="name@company.com"
+                  type="email"
+                  required
+                />
 
                 <label className="space-y-2">
-                  <span className="block text-sm font-semibold text-slate-700">Password</span>
+                  <span className="block text-sm font-semibold text-slate-700">
+                    Password
+                  </span>
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
@@ -168,7 +236,11 @@ function Login() {
                       onClick={() => setShowPassword((current) => !current)}
                       type="button"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </label>
@@ -184,7 +256,10 @@ function Login() {
                     />
                     Remember me
                   </label>
-                  <Link className="text-sm font-semibold text-cyan-700 hover:underline" to="/register">
+                  <Link
+                    className="text-sm font-semibold text-cyan-700 hover:underline"
+                    to="/register"
+                  >
                     Create account
                   </Link>
                 </div>
@@ -198,10 +273,6 @@ function Login() {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </form>
-
-              <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                Need help? Make sure the backend is running on <span className="font-semibold text-slate-900">http://localhost:8080</span> or set <span className="font-semibold text-slate-900">VITE_API_BASE_URL</span>.
-              </div>
             </div>
           </div>
         </section>
@@ -225,7 +296,9 @@ function MetricCard({ title, description }) {
 function Field({ label, icon: Icon, ...props }) {
   return (
     <label className="space-y-2">
-      <span className="block text-sm font-semibold text-slate-700">{label}</span>
+      <span className="block text-sm font-semibold text-slate-700">
+        {label}
+      </span>
       <div className="relative">
         <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input

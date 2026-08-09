@@ -1,7 +1,7 @@
 package com.app.publicapi.dto;
 
 import java.math.BigDecimal;
-import java.util.Map;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,7 +20,7 @@ public class PublicSubscriptionPlanResponse {
     private BigDecimal price;
     private Integer maxUsers;
     private Integer storageLimitGb;
-    private Map<String, Object> features;
+    private List<String> features;
     private Boolean active;
     private String billingCycle;
 }

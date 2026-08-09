@@ -94,6 +94,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 		Organization organization = organizationRepository.findByIdAndDeletedFalse(id)
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
+		// Validate that the current user has access to this organization
+		validateOrganizationAccess(id, getCurrentUserId());
+
 		return mapToResponse(organization);
 	}
 
@@ -109,6 +112,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 		Organization organization = organizationRepository.findByIdAndDeletedFalse(id)
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 
+		// Validate that the current user has access to this organization
+		validateOrganizationAccess(id, getCurrentUserId());
+
 		organization.setName(request.getName());
 		organization.setIndustry(request.getIndustry());
 		organization.setContactEmail(request.getContactEmail());
@@ -120,6 +126,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	@Override
 	public void deleteOrganization(Long id) {
+
+		// Validate that the current user has access to this organization
+		validateOrganizationAccess(id, getCurrentUserId());
 
 		organizationRepository.deleteById(id);
 
@@ -254,6 +263,16 @@ public class OrganizationServiceImpl implements OrganizationService {
 		organizationRepository.save(organization);
 
 		return mapToResponse(organization);
+	}
+
+	/**
+	 * Returns the ID of the currently logged-in user.
+	 */
+	private Long getCurrentUserId() {
+		String email = SecurityContextHolder.getContext().getAuthentication().getName();
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+		return user.getId();
 	}
 
 	@Override

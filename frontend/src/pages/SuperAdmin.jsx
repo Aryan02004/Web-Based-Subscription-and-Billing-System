@@ -6,29 +6,21 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
-  TriangleAlert,
   UserCheck,
   UserX,
   Ban,
+  X,
 } from "lucide-react";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import { api } from "../lib/api";
 
 const navItems = [
   {
-    label: "Overview",
+    label: "Dashboard",
     icon: LayoutDashboard,
     href: "/dashboard/super-admin",
     activeMatch: "/dashboard/super-admin",
   },
-  {
-    label: "Pending Queue",
-    icon: Clock3,
-    href: "/dashboard/super-admin",
-    activeMatch: "/dashboard/super-admin",
-  },
-  { label: "Organizations", icon: Building2, href: "/dashboard/organizations", activeMatch: "/dashboard/organizations" },
-  { label: "Approvals", icon: ShieldCheck, href: "#", disabled: true },
 ];
 
 const SORT_OPTIONS = [
@@ -76,7 +68,7 @@ function SuperAdminActionModal({ open, action, organization, reason, onReasonCha
             className="rounded-lg p-2 text-[#3c4947] transition-colors hover:bg-[#eff4ff]"
             aria-label="Close action modal"
           >
-            <TriangleAlert className="h-5 w-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 

@@ -87,28 +87,6 @@ public class AuthServiceImpl implements AuthService {
 		// Save user
 		User savedUser = userRepository.save(user);
 
-		// Fetch default admin role
-		Role adminRole = roleRepository.findByName(RoleType.ORGANIZATION_ADMIN)
-				.orElseThrow(() -> new RuntimeException("Default role ORGANIZATION_ADMIN not found"));
-
-		// Create organization
-		Organization organization = new Organization();
-		organization.setName(savedUser.getFirstName() + "'s Organization");
-		organization.setContactEmail(savedUser.getEmail());
-		organization.setStatus(OrganizationStatus.PENDING);
-		organization.setCreatedBy(savedUser);
-
-		organization = organizationRepository.save(organization);
-
-		// Create organization-user mapping
-		OrganizationUser organizationUser = new OrganizationUser();
-		organizationUser.setOrganization(organization);
-		organizationUser.setUser(savedUser);
-		organizationUser.setRole(adminRole);
-		organizationUser.setJoinedAt(LocalDateTime.now());
-		organizationUser.setStatus(OrganizationUserStatus.ACTIVE);
-
-		organizationUserRepository.save(organizationUser);
 
 		GenerateOtpRequest otpRequest = new GenerateOtpRequest();
 		otpRequest.setUserId(savedUser.getId());

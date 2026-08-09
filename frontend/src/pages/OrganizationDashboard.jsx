@@ -12,7 +12,10 @@ import {
   Users,
 } from "lucide-react";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
+import AiCard from "../components/ai/AiCard";
 import { api } from "../lib/api";
+
+// (PieChart removed — organization overview and AI card use removed)
 
 const STATUS_META = {
   APPROVED: { label: "Approved", tone: "bg-emerald-100 text-emerald-700" },
@@ -47,216 +50,255 @@ function OrganizationDashboard() {
   const [publicCheckoutLink, setPublicCheckoutLink] = useState("");
   const [publicCheckoutToken, setPublicCheckoutToken] = useState("");
   const [fetchingData, setFetchingData] = useState(false);
+  
 
-  const buildPublicCheckoutUrl = useCallback((token) =>
-    token
-      ? `${window.location.origin.replace(/\/+$/, "")}/public/org/${encodeURIComponent(token)}`
-      : "",
-  [])
+  const buildPublicCheckoutUrl = useCallback(
+    (token) =>
+      token
+        ? `${window.location.origin.replace(/\/+$/, "")}/public/org/${encodeURIComponent(token)}`
+        : "",
+    [],
+  );
   const getCheckoutStorageKey = useCallback(
     (orgId) => `subscriptor.checkoutLink.${orgId}`,
     [],
-  )
+  );
 
-  const persistCheckoutData = useCallback((orgId, token) => {
-    if (!orgId || !token) return
+  const persistCheckoutData = useCallback(
+    (orgId, token) => {
+      if (!orgId || !token) return;
 
-    try {
-      window.localStorage.setItem(
-        getCheckoutStorageKey(orgId),
-        JSON.stringify({ token: token.trim() }),
-      )
-    } catch {
-      // ignore local storage failures
-    }
-  }, [getCheckoutStorageKey])
+      try {
+        window.localStorage.setItem(
+          getCheckoutStorageKey(orgId),
+          JSON.stringify({ token: token.trim() }),
+        );
+      } catch {
+        // ignore local storage failures
+      }
+    },
+    [getCheckoutStorageKey],
+  );
 
   const loadPersistedCheckoutData = useCallback(
     (orgId) => {
-      if (!orgId) return { token: "", url: "" }
+      if (!orgId) return { token: "", url: "" };
 
       try {
-        const raw = window.localStorage.getItem(getCheckoutStorageKey(orgId))
-        if (!raw) return { token: "", url: "" }
+        const raw = window.localStorage.getItem(getCheckoutStorageKey(orgId));
+        if (!raw) return { token: "", url: "" };
 
-        const parsed = JSON.parse(raw)
-        const token = typeof parsed?.token === "string" ? parsed.token.trim() : ""
+        const parsed = JSON.parse(raw);
+        const token =
+          typeof parsed?.token === "string" ? parsed.token.trim() : "";
         return {
           token,
           url: token ? buildPublicCheckoutUrl(token) : "",
-        }
+        };
       } catch {
-        return { token: "", url: "" }
+        return { token: "", url: "" };
       }
     },
     [buildPublicCheckoutUrl, getCheckoutStorageKey],
-  )
-  const normalizeLinkResponse = useCallback((linkResponse) => {
-    const buildUrlFromToken = (token) =>
-      typeof token === "string" && token.trim()
-        ? token.trim().startsWith("http://") || token.trim().startsWith("https://")
-          ? token.trim()
-          : buildPublicCheckoutUrl(token.trim())
-        : ""
+  );
+  const normalizeLinkResponse = useCallback(
+    (linkResponse) => {
+      const buildUrlFromToken = (token) =>
+        typeof token === "string" && token.trim()
+          ? token.trim().startsWith("http://") ||
+            token.trim().startsWith("https://")
+            ? token.trim()
+            : buildPublicCheckoutUrl(token.trim())
+          : "";
 
-    const extractTokenFromUrl = (url) => {
-      if (typeof url !== "string") return ""
-      const trimmed = url.trim()
-      const publicMatch = trimmed.match(/\/public\/org\/([^/?#]+)/)
-      if (publicMatch) return decodeURIComponent(publicMatch[1])
-      const billingMatch = trimmed.match(/\/billing\/([^/?#]+)/)
-      if (billingMatch) return decodeURIComponent(billingMatch[1])
-      return trimmed
-    }
+      const extractTokenFromUrl = (url) => {
+        if (typeof url !== "string") return "";
+        const trimmed = url.trim();
+        const publicMatch = trimmed.match(/\/public\/org\/([^/?#]+)/);
+        if (publicMatch) return decodeURIComponent(publicMatch[1]);
+        const billingMatch = trimmed.match(/\/billing\/([^/?#]+)/);
+        if (billingMatch) return decodeURIComponent(billingMatch[1]);
+        return trimmed;
+      };
 
-    if (typeof linkResponse === "string") {
-      const trimmed = linkResponse.trim()
-      return {
-        token: trimmed.startsWith("http://") || trimmed.startsWith("https://") ? extractTokenFromUrl(trimmed) : trimmed,
-        url: buildUrlFromToken(trimmed),
+      if (typeof linkResponse === "string") {
+        const trimmed = linkResponse.trim();
+        return {
+          token:
+            trimmed.startsWith("http://") || trimmed.startsWith("https://")
+              ? extractTokenFromUrl(trimmed)
+              : trimmed,
+          url: buildUrlFromToken(trimmed),
+        };
       }
-    }
 
-    if (linkResponse && typeof linkResponse === "object") {
-      const tokenCandidate = [linkResponse.token, linkResponse.data, linkResponse.path, linkResponse.tokenId, linkResponse.id]
-        .find((value) => typeof value === "string" && value.trim())
-      const urlCandidate = [linkResponse.url, linkResponse.checkoutUrl, linkResponse.link, linkResponse.path]
-        .find((value) => typeof value === "string" && value.trim() && (value.trim().startsWith("http://") || value.trim().startsWith("https://")))
+      if (linkResponse && typeof linkResponse === "object") {
+        const tokenCandidate = [
+          linkResponse.token,
+          linkResponse.data,
+          linkResponse.path,
+          linkResponse.tokenId,
+          linkResponse.id,
+        ].find((value) => typeof value === "string" && value.trim());
+        const urlCandidate = [
+          linkResponse.url,
+          linkResponse.checkoutUrl,
+          linkResponse.link,
+          linkResponse.path,
+        ].find(
+          (value) =>
+            typeof value === "string" &&
+            value.trim() &&
+            (value.trim().startsWith("http://") ||
+              value.trim().startsWith("https://")),
+        );
 
-      const token = tokenCandidate?.trim() || (urlCandidate ? extractTokenFromUrl(urlCandidate) : "")
-      const url = urlCandidate || buildUrlFromToken(token)
+        const token =
+          tokenCandidate?.trim() ||
+          (urlCandidate ? extractTokenFromUrl(urlCandidate) : "");
+        const url = urlCandidate || buildUrlFromToken(token);
 
-      return { token, url }
-    }
+        return { token, url };
+      }
 
-    return { token: "", url: "" }
-  }, [buildPublicCheckoutUrl])
+      return { token: "", url: "" };
+    },
+    [buildPublicCheckoutUrl],
+  );
 
   const setCheckoutFromOrganization = useCallback(
     (organizationResponse) => {
-      if (!organizationResponse) return
+      if (!organizationResponse) return;
 
-      const existingToken = organizationResponse.publicLinkToken || ""
-      const normalized = normalizeLinkResponse({ token: existingToken })
+      const existingToken = organizationResponse.publicLinkToken || "";
+      const normalized = normalizeLinkResponse({ token: existingToken });
 
       if (normalized.token) {
-        setPublicCheckoutToken(normalized.token)
-        setPublicCheckoutLink(normalized.url)
-        persistCheckoutData(organizationId, normalized.token)
-        return
+        setPublicCheckoutToken(normalized.token);
+        setPublicCheckoutLink(normalized.url);
+        persistCheckoutData(organizationId, normalized.token);
+        return;
       }
 
-      const persisted = loadPersistedCheckoutData(organizationId)
+      const persisted = loadPersistedCheckoutData(organizationId);
       if (persisted.token) {
-        setPublicCheckoutToken(persisted.token)
-        setPublicCheckoutLink(persisted.url)
+        setPublicCheckoutToken(persisted.token);
+        setPublicCheckoutLink(persisted.url);
       } else {
-        setPublicCheckoutToken("")
-        setPublicCheckoutLink("")
+        setPublicCheckoutToken("");
+        setPublicCheckoutLink("");
       }
     },
-    [loadPersistedCheckoutData, normalizeLinkResponse, organizationId, persistCheckoutData],
-  )
+    [
+      loadPersistedCheckoutData,
+      normalizeLinkResponse,
+      organizationId,
+      persistCheckoutData,
+    ],
+  );
 
   const generateOrgLink = async () => {
-    if (!organizationId) return setError("Missing organization context.")
+    if (!organizationId) return setError("Missing organization context.");
 
-    setFetchingData(true)
-    setError("")
+    setFetchingData(true);
+    setError("");
 
     try {
-      const linkResponse = await api.organization.generateLink({ organizationId })
-      const linkData = normalizeLinkResponse(linkResponse)
+      const linkResponse = await api.organization.generateLink({
+        organizationId,
+      });
+      const linkData = normalizeLinkResponse(linkResponse);
 
       if (!linkData.url || !linkData.token) {
-        throw new Error("Unable to generate a valid checkout link.")
+        throw new Error("Unable to generate a valid checkout link.");
       }
 
-      setPublicCheckoutLink(linkData.url)
-      setPublicCheckoutToken(linkData.token)
-      persistCheckoutData(organizationId, linkData.token)
+      setPublicCheckoutLink(linkData.url);
+      setPublicCheckoutToken(linkData.token);
+      persistCheckoutData(organizationId, linkData.token);
     } catch (requestError) {
-      setError(requestError.message || "Unable to generate checkout link.")
+      setError(requestError.message || "Unable to generate checkout link.");
     } finally {
-      setFetchingData(false)
+      setFetchingData(false);
     }
-  }
+  };
 
   const refreshData = useCallback(async () => {
-    if (!organizationId) return
+    if (!organizationId) return;
 
-    setLoading(true)
-    setError("")
-    setFetchingData(true)
+    setLoading(true);
+    setError("");
+    setFetchingData(true);
 
     try {
-      const [organizationResponse, plansResponse, customersResponse, invoicesResponse, subscriptionsResponse] = await Promise.all([
+      const [
+        organizationResponse,
+        plansResponse,
+        customersResponse,
+        invoicesResponse,
+        subscriptionsResponse,
+      ] = await Promise.all([
         api.organization.getById(organizationId),
         api.plan.list({ organizationId }),
         api.customer.list({ organizationId }),
         api.invoice.list({ organizationId }),
         api.subscription.list({ organizationId }),
-      ])
+      ]);
 
-      setOrganization(organizationResponse)
-      setPlans(plansResponse || [])
-      setCustomers(customersResponse || [])
-      setInvoices(invoicesResponse || [])
-      setSubscriptions(subscriptionsResponse || [])
-      setCheckoutFromOrganization(organizationResponse)
+      setOrganization(organizationResponse);
+      setPlans(plansResponse || []);
+      setCustomers(customersResponse || []);
+      setInvoices(invoicesResponse || []);
+      setSubscriptions(subscriptionsResponse || []);
+      setCheckoutFromOrganization(organizationResponse);
     } catch (requestError) {
-      setError(requestError.message || "Unable to load organization data.")
+      setError(requestError.message || "Unable to load organization data.");
     } finally {
-      setLoading(false)
-      setFetchingData(false)
+      setLoading(false);
+      setFetchingData(false);
     }
-  }, [organizationId, setCheckoutFromOrganization])
+  }, [organizationId, setCheckoutFromOrganization]);
 
   useEffect(() => {
-    if (!organizationId) return
-
-    const persisted = loadPersistedCheckoutData(organizationId)
-    if (persisted.token) {
-      setPublicCheckoutToken(persisted.token)
-      setPublicCheckoutLink(persisted.url)
+    if (!organizationId) return;
+    const persisted = loadPersistedCheckoutData(organizationId);
+    if (persisted.token && persisted.token !== publicCheckoutToken) {
+      // avoid synchronous setState inside effect to prevent cascading renders
+      setTimeout(() => {
+        setPublicCheckoutToken(persisted.token);
+        setPublicCheckoutLink(persisted.url);
+      }, 0);
     }
-  }, [organizationId, loadPersistedCheckoutData])
+  }, [organizationId, loadPersistedCheckoutData, publicCheckoutToken]);
 
   useEffect(() => {
-    if (!organizationId) return
+    if (!organizationId) return;
 
-    let cancelled = false
+    let cancelled = false;
     void (async () => {
-      if (cancelled) return
-      await refreshData()
-    })()
+      if (cancelled) return;
+      await refreshData();
+    })();
 
     return () => {
-      cancelled = true
-    }
-  }, [organizationId, refreshData])
+      cancelled = true;
+    };
+  }, [organizationId, refreshData]);
+
+  
 
   const parseFeatureLines = (rawValue) =>
     rawValue
       .split("\n")
       .map((line) => line.trim())
-      .filter(Boolean)
-      .reduce((result, line) => {
-        const [key, ...rest] = line.split(":")
-        if (!key) return result
-        result[key.trim()] = rest.join(":").trim() || true
-        return result
-      }, {})
+      .filter(Boolean);
 
   const formatFeatureLines = (features) => {
-    if (!features || typeof features !== "object") return ""
-    return Object.entries(features)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join("\n")
-  }
+    return Array.isArray(features) ? features.join("\n") : "";
+  };
 
   const openCreatePlan = () => {
-    setSelectedPlan(null)
+    setSelectedPlan(null);
     setPlanForm({
       name: "",
       price: "",
@@ -266,44 +308,47 @@ function OrganizationDashboard() {
       storageLimitGb: "",
       features: "",
       active: true,
-    })
-    setIsPlanModalOpen(true)
-  }
+    });
+    setIsPlanModalOpen(true);
+  };
 
   const openEditPlan = (plan) => {
-    setSelectedPlan(plan)
+    setSelectedPlan(plan);
     setPlanForm({
       name: plan.planName || plan.name || "",
       price: plan.price != null ? String(plan.price) : "",
-      interval: plan.billingCycle ? String(plan.billingCycle).toLowerCase() : "monthly",
+      interval: plan.billingCycle
+        ? String(plan.billingCycle).toLowerCase()
+        : "monthly",
       description: plan.description || "",
       maxUsers: plan.maxUsers != null ? String(plan.maxUsers) : "",
-      storageLimitGb: plan.storageLimitGb != null ? String(plan.storageLimitGb) : "",
+      storageLimitGb:
+        plan.storageLimitGb != null ? String(plan.storageLimitGb) : "",
       features: formatFeatureLines(plan.features),
       active: plan.active !== false,
-    })
-    setIsPlanModalOpen(true)
-  }
+    });
+    setIsPlanModalOpen(true);
+  };
 
   const openPlanModal = (plan) => {
     if (plan) {
-      openEditPlan(plan)
+      openEditPlan(plan);
     } else {
-      openCreatePlan()
+      openCreatePlan();
     }
-  }
+  };
 
   const handlePlanChange = (field, value) => {
-    setPlanForm((s) => ({ ...s, [field]: value }))
-  }
+    setPlanForm((s) => ({ ...s, [field]: value }));
+  };
 
   const savePlan = async () => {
-    if (!organizationId) return setError("Missing organization context.")
+    if (!organizationId) return setError("Missing organization context.");
 
-    setCreatingPlan(true)
-    setError("")
+    setCreatingPlan(true);
+    setError("");
 
-    const features = parseFeatureLines(planForm.features)
+    const features = parseFeatureLines(planForm.features);
 
     const payload = {
       planName: planForm.name.trim(),
@@ -311,47 +356,49 @@ function OrganizationDashboard() {
       price: Number(planForm.price) || 0,
       billingCycle: planForm.interval === "yearly" ? "YEARLY" : "MONTHLY",
       maxUsers: planForm.maxUsers ? Number(planForm.maxUsers) : null,
-      storageLimitGb: planForm.storageLimitGb ? Number(planForm.storageLimitGb) : null,
-      features: Object.keys(features).length > 0 ? features : null,
+      storageLimitGb: planForm.storageLimitGb
+        ? Number(planForm.storageLimitGb)
+        : null,
+      features: features.length ? features : null,
       active: planForm.active,
       organization: { id: Number(organizationId) },
-    }
+    };
 
     try {
       if (selectedPlan) {
-        await api.plan.update(selectedPlan.id, payload)
+        await api.plan.update(selectedPlan.id, payload);
       } else {
-        await api.plan.create(payload)
+        await api.plan.create(payload);
       }
 
-      await refreshData()
-      setIsPlanModalOpen(false)
-      setSelectedPlan(null)
+      await refreshData();
+      setIsPlanModalOpen(false);
+      setSelectedPlan(null);
     } catch (requestError) {
-      setError(requestError.message || "Unable to save plan.")
+      setError(requestError.message || "Unable to save plan.");
     } finally {
-      setCreatingPlan(false)
+      setCreatingPlan(false);
     }
-  }
+  };
 
   const handleDeletePlan = async (planId) => {
-    if (!window.confirm("Delete this plan? This cannot be undone.")) return
-    setFetchingData(true)
-    setError("")
+    if (!window.confirm("Delete this plan? This cannot be undone.")) return;
+    setFetchingData(true);
+    setError("");
 
     try {
-      await api.plan.remove(planId)
-      await refreshData()
+      await api.plan.remove(planId);
+      await refreshData();
     } catch (requestError) {
-      setError(requestError.message || "Unable to delete plan.")
+      setError(requestError.message || "Unable to delete plan.");
     } finally {
-      setFetchingData(false)
+      setFetchingData(false);
     }
-  }
+  };
 
   const handleTogglePlanActive = async (plan) => {
-    setFetchingData(true)
-    setError("")
+    setFetchingData(true);
+    setError("");
 
     try {
       const payload = {
@@ -361,40 +408,62 @@ function OrganizationDashboard() {
         billingCycle: plan.billingCycle || plan.interval || "MONTHLY",
         maxUsers: plan.maxUsers || null,
         storageLimitGb: plan.storageLimitGb || null,
-        features: plan.features || null,
+        features:
+          Array.isArray(plan.features) && plan.features.length
+            ? plan.features
+            : null,
         active: plan.active === false ? true : false,
         organization: { id: Number(organizationId) },
-      }
+      };
 
-      await api.plan.update(plan.id, payload)
-      await refreshData()
+      await api.plan.update(plan.id, payload);
+      await refreshData();
     } catch (requestError) {
-      setError(requestError.message || "Unable to update plan status.")
+      setError(requestError.message || "Unable to update plan status.");
     } finally {
-      setFetchingData(false)
+      setFetchingData(false);
     }
-  }
+  };
 
-  const totalRevenue = invoices.reduce((sum, invoice) => {
-    const amount = Number(invoice.totalAmount || invoice.total_amount || 0)
-    return sum + (Number.isFinite(amount) ? amount : 0)
-  }, 0)
+  // Only include paid invoices in revenue calculation
+  // Normalize status fields (some responses use `status`, others `invoiceStatus`)
+  const totalRevenue = invoices
+    .filter((inv) =>
+      String(inv.status || inv.invoiceStatus || "").toLowerCase() === "paid",
+    )
+    .reduce((sum, invoice) => {
+      const amount = Number(invoice.totalAmount || invoice.total_amount || 0);
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
 
-  const activeSubscriptions = subscriptions.filter((sub) => sub.status === "ACTIVE" || sub.status === "active").length
-  const totalCustomers = customers.length
-  const totalPlans = plans.length
-  const activePlans = plans.filter((plan) => plan.active !== false).length
-  const paidInvoices = invoices.filter((invoice) => invoice.status === "PAID" || invoice.status === "paid").length
-  const pendingInvoices = invoices.filter((invoice) => invoice.status === "PENDING" || invoice.status === "pending").length
+  const activeSubscriptions = subscriptions.filter(
+    (sub) => sub.status === "ACTIVE" || sub.status === "active",
+  ).length;
+  const totalCustomers = customers.length;
+  const totalPlans = plans.length;
+  const activePlans = plans.filter((plan) => plan.active !== false).length;
+  const paidInvoices = invoices.filter(
+    (invoice) => invoice.status === "PAID" || invoice.status === "paid",
+  ).length;
+  const pendingInvoices = invoices.filter(
+    (invoice) => invoice.status === "PENDING" || invoice.status === "pending",
+  ).length;
+
+  // overviewData removed per user request
 
   const formatCurrency = (value) =>
-    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(value)
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(value);
 
-  const getPlanId = (plan) => plan.id || plan.planId || plan.organizationPlanId
+  const getPlanId = (plan) => plan.id || plan.planId || plan.organizationPlanId;
 
   const renderTokenValue = () => {
     if (!publicCheckoutToken) {
-      return <span className="text-sm text-[#6b7280]">No checkout token yet</span>
+      return (
+        <span className="text-sm text-[#6b7280]">No checkout token yet</span>
+      );
     }
 
     return (
@@ -410,14 +479,18 @@ function OrganizationDashboard() {
           Copy token
         </button>
       </div>
-    )
-  }
+    );
+  };
 
   const status = organization?.status || "PENDING";
   const statusMeta = STATUS_META[status] || STATUS_META.PENDING;
 
   return (
-    <DashboardLayout searchQuery="" onSearchChange={() => {}} searchPlaceholder="Search organizations...">
+    <DashboardLayout
+      searchQuery=""
+      onSearchChange={() => {}}
+      searchPlaceholder="Search organizations..."
+    >
       <div className="mx-auto max-w-6xl px-6 py-8">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
@@ -429,12 +502,17 @@ function OrganizationDashboard() {
               Back to organizations
             </Link>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#3c4947]">Organization dashboard</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#3c4947]">
+                Organization dashboard
+              </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#0b1c30]">
-                {organization?.organizationName || organization?.name || "Organization detail"}
+                {organization?.organizationName ||
+                  organization?.name ||
+                  "Organization detail"}
               </h1>
               <p className="max-w-2xl text-base text-[#3c4947]">
-                View the selected organization, its current approval status, and key contact details.
+                View the selected organization, its current approval status, and
+                key contact details.
               </p>
             </div>
           </div>
@@ -474,10 +552,16 @@ function OrganizationDashboard() {
           <div className="space-y-8">
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Status</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                  Status
+                </p>
                 <div className="mt-4 flex items-center justify-between gap-4">
-                  <p className="text-2xl font-bold text-[#0b1c30]">{statusMeta.label}</p>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.tone}`}>
+                  <p className="text-2xl font-bold text-[#0b1c30]">
+                    {statusMeta.label}
+                  </p>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.tone}`}
+                  >
                     {status}
                   </span>
                 </div>
@@ -486,73 +570,133 @@ function OrganizationDashboard() {
                 </p>
               </div>
               <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Industry</p>
-                <p className="mt-4 text-2xl font-bold text-[#0b1c30]">{organization.industry || "General"}</p>
-                <p className="mt-3 text-sm text-[#3c4947]">Primary business vertical.</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                  Industry
+                </p>
+                <p className="mt-4 text-2xl font-bold text-[#0b1c30]">
+                  {organization.industry || "General"}
+                </p>
+                <p className="mt-3 text-sm text-[#3c4947]">
+                  Primary business vertical.
+                </p>
               </div>
               <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Created on</p>
-                <p className="mt-4 text-2xl font-bold text-[#0b1c30]">
-                  {organization.createdAt ? new Date(organization.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                  Created on
                 </p>
-                <p className="mt-3 text-sm text-[#3c4947]">Date the organization was registered.</p>
+                <p className="mt-4 text-2xl font-bold text-[#0b1c30]">
+                  {organization.createdAt
+                    ? new Date(organization.createdAt).toLocaleDateString(
+                        "en-IN",
+                        { day: "numeric", month: "short", year: "numeric" },
+                      )
+                    : "—"}
+                </p>
+                <p className="mt-3 text-sm text-[#3c4947]">
+                  Date the organization was registered.
+                </p>
+              </div>
+            </div>
+
+
+
+            <div className="w-full px-4 sm:px-6 lg:px-8">
+              <div className="lg:col-span-1">
+                <AiCard organizationId={organizationId} />
               </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Contact</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                    Contact
+                  </p>
                   <Mail className="h-4 w-4 text-[#006b5f]" />
                 </div>
-                <p className="mt-4 text-lg font-semibold text-[#0b1c30]">{organization.contactEmail || "No email set"}</p>
-                <p className="mt-2 text-sm text-[#3c4947]">Primary billing and notification address.</p>
+                <p className="mt-4 text-lg font-semibold text-[#0b1c30]">
+                  {organization.contactEmail || "No email set"}
+                </p>
+                <p className="mt-2 text-sm text-[#3c4947]">
+                  Primary billing and notification address.
+                </p>
               </div>
 
               <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Overview</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                    Overview
+                  </p>
                   <ShieldCheck className="h-4 w-4 text-[#006b5f]" />
                 </div>
-                <p className="mt-4 text-lg font-semibold text-[#0b1c30]">{organization.organizationName}</p>
-                <p className="mt-2 text-sm text-[#3c4947]">Organization ID: {organization.organizationId || organization.id}</p>
+                <p className="mt-4 text-lg font-semibold text-[#0b1c30]">
+                  {organization.organizationName}
+                </p>
+                <p className="mt-2 text-sm text-[#3c4947]">
+                  Organization ID:{" "}
+                  {organization.organizationId || organization.id}
+                </p>
               </div>
             </div>
 
-            {organization.status === 'APPROVED' ? (
+            {organization.status === "APPROVED" ? (
               <>
                 <div className="grid gap-4 lg:grid-cols-4">
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-[#006b5f]" />
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Plans</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Plans
+                      </p>
                     </div>
-                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">{totalPlans}</p>
-                    <p className="mt-2 text-sm text-[#3c4947]">Active subscription plans</p>
+                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">
+                      {totalPlans}
+                    </p>
+                    <p className="mt-2 text-sm text-[#3c4947]">
+                      Active subscription plans
+                    </p>
                   </div>
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <Users className="h-5 w-5 text-[#006b5f]" />
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Customers</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Customers
+                      </p>
                     </div>
-                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">{totalCustomers}</p>
-                    <p className="mt-2 text-sm text-[#3c4947]">Registered customers</p>
+                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">
+                      {totalCustomers}
+                    </p>
+                    <p className="mt-2 text-sm text-[#3c4947]">
+                      Registered customers
+                    </p>
                   </div>
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <Banknote className="h-5 w-5 text-[#006b5f]" />
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Revenue</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Revenue
+                      </p>
                     </div>
-                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">{formatCurrency(totalRevenue)}</p>
-                    <p className="mt-2 text-sm text-[#3c4947]">Invoice value generated</p>
+                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">
+                      {formatCurrency(totalRevenue)}
+                    </p>
+                    <p className="mt-2 text-sm text-[#3c4947]">
+                      Invoice value generated
+                    </p>
                   </div>
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <Link2 className="h-5 w-5 text-[#006b5f]" />
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Subscriptions</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Subscriptions
+                      </p>
                     </div>
-                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">{activeSubscriptions}</p>
-                    <p className="mt-2 text-sm text-[#3c4947]">Active subscriptions</p>
+                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">
+                      {activeSubscriptions}
+                    </p>
+                    <p className="mt-2 text-sm text-[#3c4947]">
+                      Active subscriptions
+                    </p>
                   </div>
                 </div>
 
@@ -560,26 +704,44 @@ function OrganizationDashboard() {
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-[#006b5f]" />
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Active plans</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Active plans
+                      </p>
                     </div>
-                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">{activePlans}</p>
-                    <p className="mt-2 text-sm text-[#3c4947]">Plans currently available for checkout.</p>
+                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">
+                      {activePlans}
+                    </p>
+                    <p className="mt-2 text-sm text-[#3c4947]">
+                      Plans currently available for checkout.
+                    </p>
                   </div>
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <Banknote className="h-5 w-5 text-[#006b5f]" />
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Paid invoices</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Paid invoices
+                      </p>
                     </div>
-                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">{paidInvoices}</p>
-                    <p className="mt-2 text-sm text-[#3c4947]">Invoices successfully collected.</p>
+                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">
+                      {paidInvoices}
+                    </p>
+                    <p className="mt-2 text-sm text-[#3c4947]">
+                      Invoices successfully collected.
+                    </p>
                   </div>
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <AlertCircle className="h-5 w-5 text-[#006b5f]" />
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Pending invoices</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Pending invoices
+                      </p>
                     </div>
-                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">{pendingInvoices}</p>
-                    <p className="mt-2 text-sm text-[#3c4947]">Invoices still awaiting payment.</p>
+                    <p className="mt-4 text-3xl font-bold text-[#0b1c30]">
+                      {pendingInvoices}
+                    </p>
+                    <p className="mt-2 text-sm text-[#3c4947]">
+                      Invoices still awaiting payment.
+                    </p>
                   </div>
                 </div>
               </>
@@ -599,8 +761,12 @@ function OrganizationDashboard() {
                 <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Plans</p>
-                      <p className="mt-2 text-sm text-[#3c4947]">Manage subscription plans and public checkout links.</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Plans
+                      </p>
+                      <p className="mt-2 text-sm text-[#3c4947]">
+                        Manage subscription plans and public checkout links.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -615,21 +781,43 @@ function OrganizationDashboard() {
                     <table className="min-w-full divide-y divide-[#e5e7eb] text-sm text-[#3c4947]">
                       <thead>
                         <tr>
-                          <th className="px-4 py-3 text-left font-semibold">Name</th>
-                          <th className="px-4 py-3 text-left font-semibold">Price</th>
-                          <th className="px-4 py-3 text-left font-semibold">Interval</th>
-                          <th className="px-4 py-3 text-left font-semibold">Status</th>
-                          <th className="px-4 py-3 text-left font-semibold">Actions</th>
+                          <th className="px-4 py-3 text-left font-semibold">
+                            Name
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold">
+                            Price
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold">
+                            Interval
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold">
+                            Status
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#e5e7eb]">
                         {plans.length > 0 ? (
                           plans.map((plan) => (
                             <tr key={getPlanId(plan)}>
-                              <td className="px-4 py-4">{plan.planName || plan.name || "Untitled plan"}</td>
-                              <td className="px-4 py-4">{formatCurrency(plan.price || plan.amount || 0)}</td>
-                              <td className="px-4 py-4">{(plan.billingCycle || plan.interval || "MONTHLY").toLowerCase()}</td>
-                              <td className="px-4 py-4">{plan.active === false ? "Inactive" : "Active"}</td>
+                              <td className="px-4 py-4">
+                                {plan.planName || plan.name || "Untitled plan"}
+                              </td>
+                              <td className="px-4 py-4">
+                                {formatCurrency(plan.price || plan.amount || 0)}
+                              </td>
+                              <td className="px-4 py-4">
+                                {(
+                                  plan.billingCycle ||
+                                  plan.interval ||
+                                  "MONTHLY"
+                                ).toLowerCase()}
+                              </td>
+                              <td className="px-4 py-4">
+                                {plan.active === false ? "Inactive" : "Active"}
+                              </td>
                               <td className="px-4 py-4">
                                 <div className="flex flex-wrap gap-2">
                                   <button
@@ -644,7 +832,9 @@ function OrganizationDashboard() {
                                     onClick={() => handleTogglePlanActive(plan)}
                                     className="rounded-lg border border-[#cbd5e1] px-3 py-1 text-xs font-semibold text-[#0b1c30] transition hover:bg-[#eff8f6]"
                                   >
-                                    {plan.active === false ? "Activate" : "Deactivate"}
+                                    {plan.active === false
+                                      ? "Activate"
+                                      : "Deactivate"}
                                   </button>
                                   <button
                                     type="button"
@@ -659,8 +849,12 @@ function OrganizationDashboard() {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#6b7280]">
-                              No plans found. Create a plan to share a public checkout link.
+                            <td
+                              colSpan={5}
+                              className="px-4 py-8 text-center text-sm text-[#6b7280]"
+                            >
+                              No plans found. Create a plan to share a public
+                              checkout link.
                             </td>
                           </tr>
                         )}
@@ -672,8 +866,13 @@ function OrganizationDashboard() {
                 <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Organization checkout</p>
-                      <p className="mt-2 text-sm text-[#3c4947]">One public checkout link covers every plan for this organization.</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                        Organization checkout
+                      </p>
+                      <p className="mt-2 text-sm text-[#3c4947]">
+                        One public checkout link covers every plan for this
+                        organization.
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -681,26 +880,31 @@ function OrganizationDashboard() {
                       disabled={fetchingData}
                       className="rounded-lg bg-[#006b5f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#005248] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {publicCheckoutLink ? "Refresh public link" : "Generate public checkout link"}
+                      {publicCheckoutLink
+                        ? "Refresh public link"
+                        : "Generate public checkout link"}
                     </button>
                   </div>
 
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-3xl border border-[#e5e7eb] bg-[#f8fafb] p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-[#6b7280]">Checkout token</p>
-                      <div className="mt-3">
-                        {renderTokenValue()}
-                      </div>
-                    </div>
                     <div className="rounded-3xl border border-[#e5e7eb] bg-[#fefdfc] p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-[#6b7280]">Public URL</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-[#6b7280]">
+                        Public URL
+                      </p>
                       <div className="mt-3">
                         {publicCheckoutLink ? (
-                          <a href={publicCheckoutLink} target="_blank" rel="noreferrer" className="text-[#006b5f] hover:underline break-all">
+                          <a
+                            href={publicCheckoutLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#006b5f] hover:underline break-all"
+                          >
                             {publicCheckoutLink}
                           </a>
                         ) : (
-                          <p className="text-sm text-[#6b7280]">No public checkout URL generated yet.</p>
+                          <p className="text-sm text-[#6b7280]">
+                            No public checkout URL generated yet.
+                          </p>
                         )}
                       </div>
                     </div>
@@ -709,38 +913,68 @@ function OrganizationDashboard() {
 
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Recent customers</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                      Recent customers
+                    </p>
                     <div className="mt-4 space-y-3">
                       {customers.length > 0 ? (
                         customers.slice(0, 4).map((customer) => (
-                          <div key={customer.id} className="rounded-2xl bg-[#f8fafb] p-3">
-                            <p className="font-semibold text-[#0b1c30]">{customer.name || customer.fullName || "Customer"}</p>
-                            <p className="text-sm text-[#3c4947]">{customer.email || customer.contactEmail || "No email"}</p>
+                          <div
+                            key={customer.id}
+                            className="rounded-2xl bg-[#f8fafb] p-3"
+                          >
+                            <p className="font-semibold text-[#0b1c30]">
+                              {customer.name || customer.fullName || "Customer"}
+                            </p>
+                            <p className="text-sm text-[#3c4947]">
+                              {customer.email ||
+                                customer.contactEmail ||
+                                "No email"}
+                            </p>
                           </div>
                         ))
                       ) : (
-                        <p className="text-sm text-[#6b7280]">No customers have been registered yet.</p>
+                        <p className="text-sm text-[#6b7280]">
+                          No customers have been registered yet.
+                        </p>
                       )}
                     </div>
                   </div>
 
                   <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Latest invoices</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                      Latest invoices
+                    </p>
                     <div className="mt-4 space-y-3">
                       {invoices.length > 0 ? (
                         invoices.slice(0, 4).map((invoice) => (
-                          <div key={invoice.id} className="rounded-2xl bg-[#f8fafb] p-3">
+                          <div
+                            key={invoice.id}
+                            className="rounded-2xl bg-[#f8fafb] p-3"
+                          >
                             <div className="flex items-center justify-between gap-2">
-                              <p className="font-semibold text-[#0b1c30]">Invoice #{invoice.id}</p>
+                              <p className="font-semibold text-[#0b1c30]">
+                                Invoice #{invoice.id}
+                              </p>
                               <span className="rounded-full bg-[#e6f5f2] px-2 py-1 text-[11px] font-semibold text-[#0b785d]">
-                                {invoice.status || invoice.invoiceStatus || "Pending"}
+                                {invoice.status ||
+                                  invoice.invoiceStatus ||
+                                  "Pending"}
                               </span>
                             </div>
-                            <p className="text-sm text-[#3c4947]">{formatCurrency(invoice.totalAmount || invoice.total_amount || 0)}</p>
+                            <p className="text-sm text-[#3c4947]">
+                              {formatCurrency(
+                                invoice.totalAmount ||
+                                  invoice.total_amount ||
+                                  0,
+                              )}
+                            </p>
                           </div>
                         ))
                       ) : (
-                        <p className="text-sm text-[#6b7280]">No invoices generated yet.</p>
+                        <p className="text-sm text-[#6b7280]">
+                          No invoices generated yet.
+                        </p>
                       )}
                     </div>
                   </div>
@@ -751,42 +985,46 @@ function OrganizationDashboard() {
             <div className="rounded-3xl border border-[#bbcac6] bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">Next step</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#3c4947]">
+                    Next step
+                  </p>
                   <p className="mt-3 text-base text-[#0b1c30]">
                     {organization.status === "APPROVED"
                       ? "Your organization can create plans and generate checkout links."
                       : organization.status === "PENDING"
-                      ? "Waiting for Super Admin approval."
-                      : organization.status === "SUSPENDED"
-                      ? "Reach out to support to resolve a suspension."
-                      : "Review the rejection details and resubmit if needed."}
+                        ? "Waiting for Super Admin approval."
+                        : organization.status === "SUSPENDED"
+                          ? "Reach out to support to resolve a suspension."
+                          : "Review the rejection details and resubmit if needed."}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-[#eff4ff] px-3 py-2 text-xs font-semibold text-[#006b5f]">
                   {statusMeta.label}
                 </div>
               </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={openCreatePlan}
-                className="rounded-lg bg-[#006b5f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#005248]"
-              >
-                Create plan
-              </button>
-              <button
-                type="button"
-                onClick={generateOrgLink}
-                disabled={fetchingData}
-                className="rounded-lg border border-[#bbcac6] px-4 py-2 text-sm font-semibold text-[#3c4947] transition hover:bg-[#eff4ff] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Generate checkout link
-              </button>
-            </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={openCreatePlan}
+                  className="rounded-lg bg-[#006b5f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#005248]"
+                >
+                  Create plan
+                </button>
+                <button
+                  type="button"
+                  onClick={generateOrgLink}
+                  disabled={fetchingData}
+                  className="rounded-lg border border-[#bbcac6] px-4 py-2 text-sm font-semibold text-[#3c4947] transition hover:bg-[#eff4ff] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Generate checkout link
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <p className="rounded-3xl border border-[#bbcac6] bg-white p-8 text-[#3c4947]">Organization not found.</p>
+          <p className="rounded-3xl border border-[#bbcac6] bg-white p-8 text-[#3c4947]">
+            Organization not found.
+          </p>
         )}
       </div>
 
@@ -795,55 +1033,83 @@ function OrganizationDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-2xl rounded-2xl bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Create subscription plan</h3>
-              <button className="text-sm text-gray-600" onClick={() => setIsPlanModalOpen(false)}>Close</button>
+              <h3 className="text-lg font-semibold">
+                Create subscription plan
+              </h3>
+              <button
+                className="text-sm text-gray-600"
+                onClick={() => setIsPlanModalOpen(false)}
+              >
+                Close
+              </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input value={planForm.name} onChange={(e) => handlePlanChange('name', e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+                <label className="block text-sm font-medium text-gray-700">
+                  Name
+                </label>
+                <input
+                  value={planForm.name}
+                  onChange={(e) => handlePlanChange("name", e.target.value)}
+                  className="mt-1 w-full rounded-md border px-3 py-2"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Price</label>
-                  <input value={planForm.price} onChange={(e) => handlePlanChange('price', e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+                  <label className="block text-sm font-medium text-gray-700">
+                    Price
+                  </label>
+                  <input
+                    value={planForm.price}
+                    onChange={(e) => handlePlanChange("price", e.target.value)}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Interval</label>
-                  <select value={planForm.interval} onChange={(e) => handlePlanChange('interval', e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Interval
+                  </label>
+                  <select
+                    value={planForm.interval}
+                    onChange={(e) =>
+                      handlePlanChange("interval", e.target.value)
+                    }
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                  >
                     <option value="monthly">Monthly</option>
                     <option value="yearly">Yearly</option>
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Max users</label>
-                  <input value={planForm.maxUsers} onChange={(e) => handlePlanChange('maxUsers', e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Storage limit (GB)</label>
-                  <input value={planForm.storageLimitGb} onChange={(e) => handlePlanChange('storageLimitGb', e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  value={planForm.description}
+                  onChange={(e) =>
+                    handlePlanChange("description", e.target.value)
+                  }
+                  className="mt-1 w-full rounded-md border px-3 py-2"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea value={planForm.description} onChange={(e) => handlePlanChange('description', e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Feature lines</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Feature lines
+                </label>
                 <textarea
                   value={planForm.features}
-                  onChange={(e) => handlePlanChange('features', e.target.value)}
-                  placeholder="feature_name: value"
+                  onChange={(e) => handlePlanChange("features", e.target.value)}
+                  placeholder="One feature per line"
                   className="mt-1 h-24 w-full rounded-md border px-3 py-2"
                 />
-                <p className="mt-2 text-xs text-[#6b7280]">Enter one feature per line like <span className="font-medium">users: 10</span>.</p>
+                <p className="mt-2 text-xs text-[#6b7280]">
+                  Enter one feature per line.
+                </p>
               </div>
 
               <div className="flex items-center gap-3">
@@ -851,21 +1117,39 @@ function OrganizationDashboard() {
                   id="plan-active"
                   type="checkbox"
                   checked={planForm.active}
-                  onChange={(e) => handlePlanChange('active', e.target.checked)}
+                  onChange={(e) => handlePlanChange("active", e.target.checked)}
                   className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
                 />
-                <label htmlFor="plan-active" className="text-sm text-gray-700">Plan is active</label>
+                <label htmlFor="plan-active" className="text-sm text-gray-700">
+                  Plan is active
+                </label>
               </div>
 
-              {error ? <div className="text-sm text-red-600">{error}</div> : null}
+              {error ? (
+                <div className="text-sm text-red-600">{error}</div>
+              ) : null}
 
               <div className="mt-4 flex items-center gap-3">
-                <button onClick={savePlan} disabled={creatingPlan} className="rounded-md bg-[#006b5f] px-4 py-2 text-white">
-                  {creatingPlan ? (selectedPlan ? 'Saving…' : 'Saving…') : selectedPlan ? 'Save changes' : 'Create plan'}
+                <button
+                  onClick={savePlan}
+                  disabled={creatingPlan}
+                  className="rounded-md bg-[#006b5f] px-4 py-2 text-white"
+                >
+                  {creatingPlan
+                    ? selectedPlan
+                      ? "Saving…"
+                      : "Saving…"
+                    : selectedPlan
+                      ? "Save changes"
+                      : "Create plan"}
                 </button>
-                <button onClick={() => setIsPlanModalOpen(false)} className="rounded-md border px-4 py-2">Cancel</button>
+                <button
+                  onClick={() => setIsPlanModalOpen(false)}
+                  className="rounded-md border px-4 py-2"
+                >
+                  Cancel
+                </button>
               </div>
-
             </div>
           </div>
         </div>
@@ -875,4 +1159,3 @@ function OrganizationDashboard() {
 }
 
 export default OrganizationDashboard;
-

@@ -55,6 +55,16 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 		return organizationUser.getOrganization();
 	}
 
+	/**
+	 * Returns the ID of the currently logged-in user.
+	 */
+	private Long getCurrentUserId() {
+		String email = SecurityContextHolder.getContext().getAuthentication().getName();
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+		return user.getId();
+	}
+
 	@Transactional
 	@Override
 	public SubscriptionPlan createPlan(SubscriptionPlan plan) {
@@ -97,6 +107,9 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
 	@Override
 	public List<SubscriptionPlan> getPlansByOrganizationId(Long organizationId) {
+		// Validate that the current user has access to this organization
+		organizationService.validateOrganizationAccess(organizationId, getCurrentUserId());
+
 		Organization organization = organizationRepository.findByIdAndDeletedFalse(organizationId)
 				.orElseThrow(() -> new RuntimeException("Organization not found"));
 

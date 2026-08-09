@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Billing Checkout</title>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+
+	<h2>Subscription Billing</h2>
+
+	<input id="token" placeholder="Billing Token">
+	<br>
+	<br>
+
+	<input id="planId" placeholder="Plan Id">
+	<br>
+	<br>
+
+	<input id="firstName" placeholder="First Name">
+	<br>
+	<br>
+
+	<input id="lastName" placeholder="Last Name">
+	<br>
+	<br>
+
+	<input id="email" placeholder="Email">
+	<br>
+	<br>
+
+	<input id="phone" placeholder="Phone">
+	<br>
+	<br>
+
+	<button onclick="payNow()">Subscribe & Pay</button>
+
+	<script>
+
+async function payNow(){
+
+const token=document.getElementById("token").value;
+
+const response=await fetch(
+`http://localhost:8080/billing/${token}/subscribe`,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+
+planId:Number(document.getElementById("planId").value),
+
+firstName:document.getElementById("firstName").value,
+
+lastName:document.getElementById("lastName").value,
+
+email:document.getElementById("email").value,
+
+phone:document.getElementById("phone").value
+
+})
+});
+
+const data=await response.json();
+
+const order=JSON.parse(data.order);
+
+const paymentId=data.paymentId;
+
+var options={
+
+key:"rzp_test_TIaWG4Hmgvkqha",
+
+amount:order.amount,
+
+currency:order.currency,
+
+name:"Subscription Billing",
+
+description:"Subscription",
+
+order_id:order.id,
+
+handler:async function(res){
+
+const verify=await fetch(
+`http://localhost:8080/api/payments/${paymentId}/verify`,
+{
+method:"PATCH",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+
+razorpayOrderId:res.razorpay_order_id,
+
+razorpayPaymentId:res.razorpay_payment_id,
+
+razorpaySignature:res.razorpay_signature
+
+})
+});
+
+const result=await verify.json();
+
+console.log(result);
+
+alert("Payment Verified Successfully");
+
+}
+
+};
+
+new Razorpay(options).open();
+
+}
+
+</script>
+
+</body>
+</html>

@@ -95,6 +95,10 @@ const publicApi = {
   verifyPayment: (token, paymentId, payload) => apiClient.post(`/billing/${encodeURIComponent(token)}/verify/${paymentId}`, payload),
 }
 
+const aiApi = {
+  dashboardSummary: () => apiClient.get('/api/ai/dashboard-summary'),
+}
+
 const testApi = {
   hello: () => apiClient.get(apiRoutes.test.hello),
 }
@@ -113,4 +117,5 @@ export const api = {
   payment: paymentApi,
   public: publicApi,
   test: testApi,
+  ai: aiApi,
 }

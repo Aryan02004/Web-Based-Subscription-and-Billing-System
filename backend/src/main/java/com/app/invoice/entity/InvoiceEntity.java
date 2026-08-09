@@ -61,5 +61,8 @@ public class InvoiceEntity extends BaseEntity {
 
     @Column(name = "generated_at")
     private LocalDateTime generatedAt;
+    
+//    @Column(name="paid_at")
+//    private LocalDateTime paidAt;
 
 }

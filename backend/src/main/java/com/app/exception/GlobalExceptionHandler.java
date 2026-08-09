@@ -32,7 +32,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
+        // Return a generic message for users plus the exception detail for debugging
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("message", "Something went wrong on our side. Please try again in a moment."));
+            .body(Map.of(
+                "message", "Something went wrong on our side. Please try again in a moment.",
+                "detail", ex.getMessage() == null ? "" : ex.getMessage()
+            ));
     }
 }

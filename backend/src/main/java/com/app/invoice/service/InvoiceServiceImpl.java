@@ -21,6 +21,7 @@ import com.app.invoice.repository.InvoiceRepository;
 import com.app.invoice.util.InvoiceNumberGenerator;
 import com.app.organization.entity.OrganizationUser;
 import com.app.organization.repository.OrganizationUserRepository;
+import com.app.organization.service.OrganizationService;
 import com.app.subscription.entity.SubscriptionEntity;
 import com.app.subscription.repository.SubscriptionRepository;
 import com.app.notification.enums.NotificationChannel;
@@ -50,9 +51,9 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 	@Autowired
 	private NotificationService notificationService;
-	
+
 	@Autowired
-	private InvoiceRepository invoiceRepository;
+	private OrganizationService organizationService;
 
 	private Long getCurrentOrganizationId() {
 
@@ -68,6 +69,16 @@ public class InvoiceServiceImpl implements InvoiceService {
 			.orElseThrow(() -> new RuntimeException("Organization not found"));
 
 		return organizationUser.getOrganization().getId();
+	}
+
+	/**
+	 * Returns the ID of the currently logged-in user.
+	 */
+	private Long getCurrentUserId() {
+		String email = SecurityContextHolder.getContext().getAuthentication().getName();
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+		return user.getId();
 	}
 
 	@Override
@@ -89,8 +100,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 		invoice.setTaxAmount(tax);
 		invoice.setTotalAmount(total);
 		invoice.setCurrency("INR");
-
-		invoice.setGeneratedAt(LocalDateTime.now());
+         invoice.setGeneratedAt(LocalDateTime.now());
+//		invoice.setPaidAt(LocalDateTime.now());
 
 		if (invoice.getStatus() == null) {
 			invoice.setStatus(InvoiceStatus.PENDING);
@@ -104,35 +115,38 @@ public class InvoiceServiceImpl implements InvoiceService {
 				NotificationType.INVOICE, NotificationChannel.IN_APP);
 
 		// Generate PDF
-		byte[] pdf = pdfGenerator.generateInvoicePdf(savedInvoice);
+//		byte[] pdf = pdfGenerator.generateInvoicePdf(savedInvoice);
 
 		// Email will be sent here in next step
 		// emailService.sendInvoice(savedInvoice, pdf);
 
 		return savedInvoice;
 	}
-	
+
 	@Override
 	public InvoiceEntity generateInvoice(SubscriptionEntity subscription) {
 
-	    InvoiceEntity invoice = new InvoiceEntity();
+		InvoiceEntity invoice = new InvoiceEntity();
 
-	    invoice.setSubscription(subscription);
+		invoice.setSubscription(subscription);
 
-	    BigDecimal subtotal = subscription.getPlan().getPrice();
-	    BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
-	    BigDecimal total = subtotal.add(tax);
+		BigDecimal subtotal = subscription.getPlan().getPrice();
+		BigDecimal tax = subtotal.multiply(new BigDecimal("0.18"));
+		BigDecimal total = subtotal.add(tax);
 
-	    invoice.setSubtotal(subtotal);
-	    invoice.setTaxAmount(tax);
-	    invoice.setTotalAmount(total);
-	    invoice.setCurrency("INR");
+		invoice.setSubtotal(subtotal);
+		invoice.setTaxAmount(tax);
+		invoice.setTotalAmount(total);
+		invoice.setCurrency("INR");
 
-	    invoice.setGeneratedAt(LocalDateTime.now());
-	    invoice.setStatus(InvoiceStatus.PENDING);
-	    invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
+		invoice.setInvoiceDate(java.time.LocalDate.now());
 
-	    return invoiceRepository.save(invoice);
+		invoice.setDueDate(java.time.LocalDate.now().plusDays(7));
+		invoice.setGeneratedAt(LocalDateTime.now());
+		invoice.setStatus(InvoiceStatus.PENDING);
+		invoice.setInvoiceNumber(invoiceNumberGenerator.generateInvoiceNumber());
+
+		return repository.save(invoice);
 	}
 
 	@Override
@@ -143,10 +157,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 
 	@Override
     public List<InvoiceEntity> getInvoicesByOrganizationId(Long organizationId) {
+        // Validate that the current user has access to this organization
+        organizationService.validateOrganizationAccess(organizationId, getCurrentUserId());
         return repository.findBySubscriptionOrganizationId(organizationId);
     }
 
-    @Override
+	@Override
 	public InvoiceEntity getInvoiceById(Long id) {
 		return repository.findByIdAndSubscriptionOrganizationId(id, getCurrentOrganizationId())
 				.orElseThrow(() -> new RuntimeException("Invoice not found"));
