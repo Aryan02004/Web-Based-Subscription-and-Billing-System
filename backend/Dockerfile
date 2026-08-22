@@ -19,6 +19,7 @@ WORKDIR /app
 # Create non-root user
 RUN useradd -r -u 1001 spring && chown -R spring:spring /app
 USER spring
+RUN mvn -q -DskipTests clean package -Dspring-boot.repackage.excludeDevtools=true
 
 # Copy the built jar
 COPY --from=builder --chown=spring:spring /app/target/*.jar app.jar
