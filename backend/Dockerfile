@@ -1,5 +1,5 @@
 # --- Build stage ---
-FROM maven:3.9.9-eclipse-temurin-25 AS builder
+FROM maven:3.9-eclipse-temurin-25 AS builder
 
 WORKDIR /app
 
@@ -21,10 +21,10 @@ RUN useradd -r -u 1001 spring && chown -R spring:spring /app
 USER spring
 
 # Copy the built jar
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder --chown=spring:spring /app/target/*.jar app.jar
 
 EXPOSE 8080
 
 ENV SERVER_PORT=8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
