@@ -9,7 +9,7 @@ RUN mvn -q -DskipTests dependency:go-offline
 
 # Copy source and build
 COPY src ./src
-RUN mvn -q -DskipTests clean package -Dspring-boot.repackage.excludeDevtools=true
+RUN mvn -q -DskipTests clean package
 
 # --- Runtime stage ---
 FROM eclipse-temurin:25-jre
@@ -19,6 +19,7 @@ WORKDIR /app
 # Create non-root user
 RUN useradd -r -u 1001 spring && chown -R spring:spring /app
 USER spring
+
 
 # Copy the built jar
 COPY --from=builder --chown=spring:spring /app/target/*.jar app.jar
