@@ -117,20 +117,20 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public SubscriptionPlan getPlanById(Long id) {
-		// TODO Auto-generated method stub
-		Organization organization = getCurrentOrganization();
-
-		return repository.findByIdAndOrganization(id, organization)
+		SubscriptionPlan plan = repository.findPlanById(id)
 				.orElseThrow(() -> new RuntimeException("Plan not found"));
+		organizationService.validateOrganizationAccess(plan.getOrganization().getId(), getCurrentUserId());
+		return plan;
 	}
 
 	@Override
+	@Transactional
 	public SubscriptionPlan updatePlan(Long id, SubscriptionPlan plan) {
-		Organization organization = getCurrentOrganization();
-
-		SubscriptionPlan existingPlan = repository.findByIdAndOrganization(id, organization)
+		SubscriptionPlan existingPlan = repository.findPlanById(id)
 				.orElseThrow(() -> new RuntimeException("Plan not found"));
+		organizationService.validateOrganizationAccess(existingPlan.getOrganization().getId(), getCurrentUserId());
 
 		existingPlan.setPlanName(plan.getPlanName());
 		existingPlan.setDescription(plan.getDescription());
@@ -145,12 +145,11 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 	}
 
 	@Override
+	@Transactional
 	public void deletePlan(Long id) {
-		// TODO Auto-generated method stub
-		Organization organization = getCurrentOrganization();
-
-		SubscriptionPlan plan = repository.findByIdAndOrganization(id, organization)
+		SubscriptionPlan plan = repository.findPlanById(id)
 				.orElseThrow(() -> new RuntimeException("Plan not found"));
+		organizationService.validateOrganizationAccess(plan.getOrganization().getId(), getCurrentUserId());
 
 		repository.delete(plan);
 	}

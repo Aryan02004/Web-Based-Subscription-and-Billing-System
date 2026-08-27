@@ -366,7 +366,7 @@ function OrganizationDashboard() {
 
     try {
       if (selectedPlan) {
-        await api.plan.update(selectedPlan.id, payload);
+        await api.plan.update(getPlanId(selectedPlan), payload);
       } else {
         await api.plan.create(payload);
       }
@@ -381,13 +381,13 @@ function OrganizationDashboard() {
     }
   };
 
-  const handleDeletePlan = async (planId) => {
+  const handleDeletePlan = async (plan) => {
     if (!window.confirm("Delete this plan? This cannot be undone.")) return;
     setFetchingData(true);
     setError("");
 
     try {
-      await api.plan.remove(planId);
+      await api.plan.remove(getPlanId(plan));
       await refreshData();
     } catch (requestError) {
       setError(requestError.message || "Unable to delete plan.");
@@ -416,7 +416,7 @@ function OrganizationDashboard() {
         organization: { id: Number(organizationId) },
       };
 
-      await api.plan.update(plan.id, payload);
+      await api.plan.update(getPlanId(plan), payload);
       await refreshData();
     } catch (requestError) {
       setError(requestError.message || "Unable to update plan status.");
@@ -838,7 +838,7 @@ function OrganizationDashboard() {
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => handleDeletePlan(plan.id)}
+                                    onClick={() => handleDeletePlan(plan)}
                                     className="rounded-lg border border-[#fca5a5] bg-[#fff1f2] px-3 py-1 text-xs font-semibold text-[#9b1c1c] transition hover:bg-[#fee2e2]"
                                   >
                                     Delete
